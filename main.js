@@ -75,8 +75,8 @@ function installSmartVisu(callback) {
 function serveSmartVisu() {
     var serverPort = parseInt(adapter.config.serverPort, 10);
 
-    var server = app.listen(8080, function() {
-        adapter.log.info('SmartVISU Server started with Doc-Root ' + adapter.config.docRoot);
+    var server = app.listen(adapter.config.serverPort, function() {
+        adapter.log.info('SmartVISU Server started on port ' + adapter.config.serverPort + ' with Doc-Root ' + adapter.config.docRoot);
         serving = true;
     });
 
