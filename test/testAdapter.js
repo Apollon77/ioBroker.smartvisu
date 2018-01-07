@@ -81,9 +81,9 @@ describe('Test ' + adapterShortName + ' adapter', function() {
             var config = setup.getAdapterConfig();
             // enable adapter
             config.common.enabled  = true;
-            config.common.loglevel = 'debug';
+            config.common.loglevel = 'silly';
 
-            //config.native.dbtype   = 'sqlite';
+            config.native.serverPort = 20000;
 
             setup.setAdapterConfig(config.common, config.native);
 
@@ -117,8 +117,8 @@ describe('Test ' + adapterShortName + ' adapter', function() {
     });
 
     it('Test ' + adapterShortName + ' adapter: Get phpinfo()', function (done) {
-        request('http://127.0.0.1:9000/phpinfo.php', function (error, response, body) {
-            console.log(body);
+        request('http://127.0.0.1:20000/phpinfo.php', function (error, response, body) {
+            console.log('BODY: ' + body);
             expect(error).to.be.not.ok;
             expect(body.indexOf('<title>phpinfo()</title>')).to.be.not.equal(-1);
             expect(response.statusCode).to.equal(200);
