@@ -98,9 +98,6 @@ describe('Test ' + adapterShortName + ' adapter', function() {
         });
     });
 
-/*
-    ENABLE THIS WHEN ADAPTER RUNS IN DEAMON MODE TO CHECK THAT IT HAS STARTED SUCCESSFULLY
-*/
     it('Test ' + adapterShortName + ' adapter: Check if adapter started', function (done) {
         this.timeout(60000);
         checkConnectionOfAdapter(function (res) {
@@ -118,16 +115,16 @@ describe('Test ' + adapterShortName + ' adapter', function() {
                 });
         });
     });
-/**/
 
-/*
-    PUT YOUR OWN TESTS HERE USING
-    it('Testname', function ( done) {
-        ...
+    it('Test ' + adapterShortName + ' adapter: Get phpinfo()', function (done) {
+        request('http://127.0.0.1:9000/phpinfo.php', function (error, response, body) {
+            console.log(body);
+            expect(error).to.be.not.ok;
+            expect(body.indexOf('<title>phpinfo()</title>')).to.be.not.equal(-1);
+            expect(response.statusCode).to.equal(200);
+            done();
+        });
     });
-
-    You can also use "sendTo" method to send messages to the started adapter
-*/
 
     after('Test ' + adapterShortName + ' adapter: Stop js-controller', function (done) {
         this.timeout(10000);
