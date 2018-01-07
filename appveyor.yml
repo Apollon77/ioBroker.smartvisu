@@ -19,6 +19,7 @@ install:
   - IF %PHP%==1 appveyor DownloadFile http://windows.php.net/downloads/releases/archives/php-7.1.0-Win32-VC14-x64.zip
   - IF %PHP%==1 7z x php-7.1.0-Win32-VC14-x64.zip >nul
   - set PATH=%PATH%;c:\php\71\
+  - cd c:\projects\%APPVEYOR_PROJECT_NAME%
   - ps: 'Install-Product node $env:nodejs_version $env:platform'
   - npm install
   - npm install winston@2.3.1
