@@ -1,0 +1,40 @@
+{
+  "name": "iobroker.smartvisu",
+  "version": "0.0.1",
+  "description": "Provide and execute SmartVISU in ioBroker",
+  "author": {
+    "name": "Ingo Fischer",
+    "email": "ingo@fischer-ka.de"
+  },
+  "contributors": [
+  ],
+  "homepage": "https://github.com/Apollon77/ioBroker.smartvisu",
+  "license": "MIT",
+  "keywords": [
+    "ioBroker",
+    "SmartVISU",
+    "Smart Home",
+    "home automation",
+    "visualisation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Apollon77/ioBroker.smartvisu"
+  },
+  "dependencies": {
+    "sphp": "^0.5.2"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "mocha": "^4.1.0",
+    "chai": "^4.1.2"
+  },
+  "main": "main.js",
+  "scripts": {
+    "test": "node node_modules/mocha/bin/mocha --exit"
+  },
+  "bugs": {
+    "url": "https://github.com/Apollon77/ioBroker.smartvisu/issues"
+  },
+  "readmeFilename": "README.md"
+}
