@@ -2,7 +2,7 @@
 /*jslint node: true */
 var expect = require('chai').expect;
 var setup  = require(__dirname + '/lib/setup');
-
+var request = require('request');
 var objects = null;
 var states  = null;
 var onStateChanged = null;
