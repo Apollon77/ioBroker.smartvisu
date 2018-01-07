@@ -1,0 +1,67 @@
+{
+    "common": {
+        "name": "smartvisu",
+        "version": "0.0.1",
+        "news": {
+            "0.0.1": {
+                "en": "initial adapter",
+                "de": "Initiale Version",
+                "ru": "Первоначальный адаптер",
+                "pt": "Versão inicial",
+                "fr": "Version initiale",
+                "nl": "Eerste release"
+            }
+        },
+		"title": "SmartVISU",
+        "titleLang": {
+            "en": "SmartVISU",
+            "de": "SmartVISU",
+            "ru": "SmartVISU",
+            "pt": "SmartVISU",
+            "nl": "SmartVISU",
+            "fr": "SmartVISU",
+            "it": "SmartVISU",
+            "es": "SmartVISU"
+        },
+        "desc": {
+            "en": "ioBroker adapter to directly integrate smartvisu (http://www.smartvisu.de/) including php execution into ioBroker",
+            "de": "SmartVISU",
+            "ru": "SmartVISU",
+            "pt": "SmartVISU",
+            "fr": "SmartVISU",
+            "nl": "SmartVISU",
+            "it": "SmartVISU",
+            "es": "SmartVISU"
+        },
+        "authors": [
+            "Ingo Fischer <ingo@fischer-ka.de>"
+        ],
+        "docs": {
+            "en": "docs/en/admin.md",
+            "ru": "docs/ru/admin.md",
+            "de": "docs/de/admin.md",
+            "es": "docs/es/admin.md",
+            "it": "docs/it/admin.md",
+            "fr": "docs/fr/admin.md",
+            "nl": "docs/nl/admin.md",
+            "pt": "docs/pt/admin.md"
+        },
+        "platform": "Javascript/Node.js",
+        "mode": "daemon",
+        "icon": "smartvisu.png",
+        "materialize": true,
+        "enabled": true,
+        "extIcon": "https://raw.githubusercontent.com/Apollon77/ioBroker.smartvisu/master/admin/smartvisu.png",
+        "keywords": ["smartvisu", "vis", "GUI", "graphical"],
+        "readme": "https://github.com/Apollon77/ioBroker.smartvisu/blob/master/README.md",
+        "loglevel": "info",
+        "type": "visualization",
+        "restartAdapters": ["smartvisu"]
+    },
+    "native": {
+        "port": 90000
+    },
+    "objects": [
+
+    ]
+}
