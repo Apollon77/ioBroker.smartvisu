@@ -23,4 +23,4 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - g++-4.8
-    - php7.0-cgi
+    - php5-cgi
