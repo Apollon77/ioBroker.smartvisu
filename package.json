@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "sphp": "^0.5.2",
+    "express": "^4",
     "recursive-copy": "^2.0.8"
   },
   "devDependencies": {
