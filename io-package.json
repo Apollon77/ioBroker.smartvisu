@@ -59,7 +59,8 @@
         "restartAdapters": ["smartvisu"]
     },
     "native": {
-        "port": 90000
+        "serverPort": 90000,
+        "docRoot": ""
     },
     "objects": [
 
