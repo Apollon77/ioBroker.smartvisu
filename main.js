@@ -10,7 +10,7 @@
 var utils = require(__dirname + '/lib/utils'); // Get common adapter utils
 var path = require('path');
 var fs = require('fs');
-var dataDir = path.normalize(utils.controllerDir + '/' + require(utils.controllerDir + '/lib/tools').getDefaultDataDir());
+var dataDir = path.normalize(utils.controllerDir + path.sep + require(utils.controllerDir + path.sep + 'lib' + path.sep + 'tools').getDefaultDataDir());
 
 var recCopy = require('recursive-copy');
 
@@ -101,7 +101,7 @@ function main() {
     if (adapter.config.docRoot[0] !== '/' && !adapter.config.docRoot.match(/^\w:\//)) {
         adapter.config.docRoot = dataDir + adapter.config.docRoot;
     }
-    adapter.config.docRoot += '/';
+    adapter.config.docRoot += path.sep;
 
     installSmartVisu(function() {
         serveSmartVisu();
