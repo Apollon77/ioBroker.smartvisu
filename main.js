@@ -69,6 +69,7 @@ function installSmartVisu(callback) {
     }
     else {
         adapter.log.info('DocRoot already exists, so do not copy over for now');
+        callback();
     }
 }
 
