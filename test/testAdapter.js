@@ -84,7 +84,10 @@ describe('Test ' + adapterShortName + ' adapter', function() {
             config.common.loglevel = 'silly';
 
             config.native.serverPort = 20000;
-
+            if (process.env.PHP_PATH && process.env.PHP_PATH !== "") {
+                config.native.phpCgiPath = process.env.PHP_PATH;
+            }
+            
             setup.setAdapterConfig(config.common, config.native);
 
             setup.startController(true, function(id, obj) {}, function (id, state) {
