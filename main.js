@@ -73,8 +73,12 @@ function installSmartVisu(callback) {
 }
 
 function serveSmartVisu() {
-    var serverPort = parseInt(adapter.config.serverPort, 10);
+    if (adapter.config.phpCgiPath) {
+        sphp.cgiEngine = adapter.config.phpCgiPath;
+        adapter.log.info('Use PHP-CGI: ' + adapter.config.phpCgiPath);
+    }
 
+    var serverPort = parseInt(adapter.config.serverPort, 10);
     var server = app.listen(adapter.config.serverPort, function() {
         adapter.log.info('SmartVISU Server started on port ' + adapter.config.serverPort + ' with Doc-Root ' + adapter.config.docRoot);
         serving = true;
