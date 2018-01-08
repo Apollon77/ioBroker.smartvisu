@@ -11,6 +11,7 @@ cache:
     - c:\php -> appveyor.yml
 init:
     - SET PATH=c:\php\71;%PATH%
+    - SET PHP_PATH=c:\php\71\php-cgi.exe
 clone_folder: 'c:\projects\%APPVEYOR_PROJECT_NAME%'
 install:
   - IF EXIST c:\php\71 (SET PHP=0) ELSE (SET PHP=1)
