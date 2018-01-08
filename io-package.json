@@ -56,7 +56,7 @@
         "readme": "https://github.com/Apollon77/ioBroker.smartvisu/blob/master/README.md",
         "loglevel": "info",
         "type": "visualization",
-        "localLink":                "%protocol%://%ip%:%port%/index.php",
+        "localLink": "%protocol%://%ip%:%serverPort%/index.php",
         "restartAdapters": ["smartvisu"]
     },
     "native": {
