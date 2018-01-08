@@ -15,8 +15,6 @@ before_install:
   - 'if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX=g++-4.8; fi'
   - which php
   - which php-cgi
-  - which php71
-  - which php71-cgi
 before_script:
   - npm install winston@2.3.1
   - npm install https://github.com/ioBroker/ioBroker.js-controller/tarball/master --production
@@ -27,7 +25,7 @@ addons:
   apt:
     sources:
     - ubuntu-toolchain-r-test
-    - ppa:ondrej/php
+    - sourceline: 'ppa:ondrej/php'
     packages:
     - g++-4.8
     - php7.1-cgi
