@@ -50,12 +50,13 @@
         "mode": "daemon",
         "icon": "smartvisu.png",
         "materialize": true,
-        "enabled": true,
+        "enabled": false,
         "extIcon": "https://raw.githubusercontent.com/Apollon77/ioBroker.smartvisu/master/admin/smartvisu.png",
         "keywords": ["smartvisu", "vis", "GUI", "graphical"],
         "readme": "https://github.com/Apollon77/ioBroker.smartvisu/blob/master/README.md",
         "loglevel": "info",
         "type": "visualization",
+        "localLink":                "%protocol%://%ip%:%port%/index.php",
         "restartAdapters": ["smartvisu"]
     },
     "native": {
