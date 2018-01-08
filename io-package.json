@@ -59,8 +59,9 @@
         "restartAdapters": ["smartvisu"]
     },
     "native": {
-        "serverPort": 9000,
-        "docRoot": ""
+        "serverPort": 8100,
+        "docRoot": "",
+        "phpCgiPath": ""
     },
     "objects": [
 
