@@ -1,0 +1,7 @@
+{
+  "on save adapter restarts with new config immediately": "При сохранении настроек адаптера он сразу же перезапускается",
+  "adapter settings": "SmartVISU Settings",
+  "serverPort": "SmartVISU Server port",
+  "docRoot": "Doc-Root (Path or empty for default)",
+  "phpCgiPath": "php-cgi (path or empty for default)"
+}
