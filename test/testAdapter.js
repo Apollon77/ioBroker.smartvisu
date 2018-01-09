@@ -87,7 +87,7 @@ describe('Test ' + adapterShortName + ' adapter', function() {
             if (process.env.PHP_PATH && process.env.PHP_PATH !== "") {
                 config.native.phpCgiPath = process.env.PHP_PATH;
             }
-            
+
             setup.setAdapterConfig(config.common, config.native);
 
             setup.startController(true, function(id, obj) {}, function (id, state) {
@@ -120,13 +120,16 @@ describe('Test ' + adapterShortName + ' adapter', function() {
     });
 
     it('Test ' + adapterShortName + ' adapter: Get phpinfo()', function (done) {
-        request('http://127.0.0.1:20000/phpinfo.php', function (error, response, body) {
-            console.log('BODY: ' + body);
-            expect(error).to.be.not.ok;
-            expect(body.indexOf('<title>phpinfo()</title>')).to.be.not.equal(-1);
-            expect(response.statusCode).to.equal(200);
-            done();
-        });
+        this.timeout(80000);
+        setTimeout(function() {
+            request('http://127.0.0.1:20000/phpinfo.php', function (error, response, body) {
+                console.log('BODY: ' + body);
+                expect(error).to.be.not.ok;
+                expect(body.indexOf('<title>phpinfo()</title>')).to.be.not.equal(-1);
+                expect(response.statusCode).to.equal(200);
+                done();
+            });
+        }, 60000);
     });
 
     after('Test ' + adapterShortName + ' adapter: Stop js-controller', function (done) {
