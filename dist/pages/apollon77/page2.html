@@ -1,0 +1,33 @@
+/**
+* -----------------------------------------------------------------------------
+* @package     smartVISU
+* @author      Martin Gleiß
+* @copyright   2012
+* @license     GPL [http://www.gnu.de]
+* -----------------------------------------------------------------------------
+*/
+
+
+{% extends "base.html" %}
+
+{% block sidebar %}
+
+{% endblock %}
+
+{% block content %}
+	{{ basic.stateswitch('', 'knx.0.Zentral.Test.T1') }}
+	{{ basic.symbol('', 'knx.0.Zentral.Test.T1') }}
+		<div class="block">
+			<div class="set-1" data-role="collapsible-set" data-theme="c" data-content-theme="a" data-mini="true">
+				<div data-role="collapsible" data-collapsed="false">
+					<h3>a minmaxavg plot</h3>
+					{{ plot.period('', 'knx.0.Zentral.Test.T2', 'minmaxavg', '100i', '', '', '', 25) }}
+				</div>
+			</div>
+		</div>
+
+	{{ basic.switch('', 'knx.0.Zentral.Test.T1') }}
+
+	<a href="index.php?page=index">index</a>
+{% endblock %}
+

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block sidebar %}
+	{% include 'navi.html' %}
+{% endblock %}
+
+{% block content %}
+		<div class="block">
+			<div class="set-1" data-role="collapsible-set" data-theme="c" data-content-theme="a" data-mini="true">
+				<div data-role="collapsible" data-collapsed="false">
+					<h3>system.adapter.admin.0</h3>
+					<div>alive: {{ basic.symbol('', 'system.adapter.admin.0.alive', '', 'message_led', ['','false','true'], '', ['blue','red','green']) }} (sollte ein grüner Kreis sein)</div>
+					<div>uptime: {{ basic.print('', 'system.adapter.admin.0.uptime', 'seconds') }}</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="block">
+			<div class="set-1" data-role="collapsible-set" data-theme="c" data-content-theme="a" data-mini="true">
+				<div data-role="collapsible" data-collapsed="false">
+					<h3>Switch</h3>
+					<p>
+						Objekt für den Switch anpassen im Quellcode von /pages/iobroker/index.html auf Zeile 26.<br>
+						Schaltet zwischen 0 und 1.
+					</p>
+					switch: {{ basic.stateswitch('', 'dein.objekt.hier', 'mini', [0,1]) }}
+				</div>
+			</div>
+		</div>
+
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "rooms.html" %}
+
+{% block content %}
+<h1><img class="icon" src='{{ icon0 }}measure_power_meter.svg' />EnergieMeter</h1>
+<div class="block">
+    <div class="set-2" data-role="collapsible-set" data-theme="a" data-content-theme="a" data-mini="true" data-iconpos="right">
+        <div data-role="collapsible" data-collapsed="false">
+ <h3>Aussentemperatur</h3>
+ {{ plot.minmaxavg('p12', 'Wetter.Temperatur.Web', '10d', '', '', '', '°', ['', 'Temperatur in °C'], '10') }}
+ </div>
+    </div>
+</div>
+
+{% endblock %}

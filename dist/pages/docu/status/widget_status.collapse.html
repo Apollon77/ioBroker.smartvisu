@@ -1,0 +1,77 @@
+/**
+* -----------------------------------------------------------------------------
+* @package     smartVISU
+* @author      Martin Gleiß
+* @copyright   2012 - 2015
+* @license     GPL [http://www.gnu.de]
+* -----------------------------------------------------------------------------
+*/
+
+
+{% extends "widget_status.html" %}
+
+{% block example %}
+
+<h5>Examples</h5>
+
+You may use this widget to collapse some html. To bind some divs to that widget you have to use the "data-bind" attribute in the div - tag.
+In this example the div is binded to the status.collapse and will be controled by it. The additional class="hide" will hide the div at startup.
+<div class="twig">
+	<code class="prettyprint">{% filter trim|escape|nl2br %}{% verbatim %}
+
+		{{ status.collapse('w1', 'bath.alert.info') }}
+		<div class="hide" data-bind="w1">
+			...
+		</div>
+
+		{% endverbatim %}{% endfilter %}
+	</code>
+</div>
+
+Use it with simple html, to show and hide a <b>div</b>:<br />
+<div class="html">
+	{{ basic.flip('f1', 'bath.alert.info') }}<br />
+	{{ status.collapse('w1', 'bath.alert.info') }}
+
+	<div class="hide" data-bind="w1">
+		Every simple html-code could be collapsed ... with text and icons <img class="icon" src="{{ icon0 }}audio_audio.svg" alt="sample icon" /> ...
+	</div>
+</div>
+
+Or use it to show and hide a <b>popup</b>:<br />
+<div class="html">
+	{{ basic.flip('f2', 'bath.alert.warning') }}<br />
+
+	<div id="status-popup" class="alert" data-bind="w2" data-role="popup" data-overlay-theme="a">
+		<div data-role="header" data-theme="c"><h1>Popup</h1></div>
+		<p>... or a popup ...</p>
+
+		<div class="control">
+			<span class="stamp"></span>
+			<a onClick="$('#status-popup').popup('close');" class="ui-mini" data-icon="check" data-iconpos="top" data-role="button" data-inline="true">OK</a>
+		</div>
+	</div>
+
+	{{ status.collapse('w2', 'bath.alert.warning') }}
+
+</div>
+
+Or use it to show and hide collapsable <b>sections</b>:<br />
+<div class="html">
+	{{ basic.flip('f3', 'bath.alert.error') }}<br />
+	{{ status.collapse('w3', 'bath.alert.error') }}
+
+	<div class="block">
+		<div class="set-1" data-role="collapsible-set" data-theme="c" data-content-theme="a" data-mini="true">
+
+			<div data-bind="w3" data-role="collapsible" data-collapsed="false">
+				<h3>Block</h3>
+
+				<p>Content</p>
+			</div>
+
+		</div>
+	</div>
+
+</div>
+{% endblock %}

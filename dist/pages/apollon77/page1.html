@@ -1,0 +1,21 @@
+/**
+* -----------------------------------------------------------------------------
+* @package     smartVISU
+* @author      Martin Gleiß
+* @copyright   2012
+* @license     GPL [http://www.gnu.de]
+* -----------------------------------------------------------------------------
+*/
+
+
+{% extends "base.html" %}
+
+{% block sidebar %}
+
+{% endblock %}
+
+{% block content %}
+	{{ basic.print('', 'knx.0.Zentral.Test.T2') }}
+	{{ basic.trigger('', 'sv.SkriptT2', '+1') }}
+	<a href="index.php?page=page2">page2</a>
+{% endblock %}

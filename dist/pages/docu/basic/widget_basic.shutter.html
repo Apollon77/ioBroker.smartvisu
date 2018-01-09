@@ -1,0 +1,29 @@
+/**
+* -----------------------------------------------------------------------------
+* @package     smartVISU
+* @author      Martin Gleiß
+* @copyright   2012 - 2015
+* @license     GPL [http://www.gnu.de]
+* -----------------------------------------------------------------------------
+*/
+
+
+{% extends "widget_basic.html" %}
+
+{% block example %}
+
+	<h5>Examples</h5>
+
+	<div class="twig">
+		<code class="prettyprint">
+			&#123;&#123; basic.shutter('', 'bath.blind.pos', 'bath.blind.angle') &#125;&#125;<br>
+			&#123;&#123; basic.shutter('', 'bath.blind.pos', 'bath.blind.angle', 99, 0, 1, '', 'pics/shutter/shutter_cliff.png') &#125;&#125;
+		</code>
+	</div>
+	<div class="html">
+		{{ basic.shutter('', 'bath.blind.pos', 'bath.blind.angle', 0, 100) }}
+		{{ basic.shutter('', 'bath.blind.pos', 'bath.blind.angle', 99, 0, 1, '', 'pics/shutter/shutter_cliff.png') }}
+	</div>
+
+{% endblock %}
+

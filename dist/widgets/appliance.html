@@ -1,0 +1,51 @@
+/**
+* -----------------------------------------------------------------------------
+* @package     smartVISU
+* @author      Martin Gleiß
+* @copyright   2012 - 2015
+* @license     GPL [http://www.gnu.de]
+* -----------------------------------------------------------------------------
+*/
+
+
+/**
+* enertex KNXnet/IP-Router
+*
+* @param unique id for this widget
+* @param the ip of the KNXnet/IP-Router
+* @param the password of the KNXnet/IP-Router
+*
+* @info works with firmware 1.025, 1.029
+*/
+{% macro iprouter(id, server, password) %}
+	{% set uid = uid(page, id) %}
+	
+	<div id="{{ uid }}" class="iprouter">
+		<div class="from"></div>
+		<div class="to"></div>
+	
+		<div class="tunnels"></div>
+		<div class="version"></div>
+	</div>
+	
+	<script type="text/javascript">
+		$('#{{ page }}').on('pagecreate', function (event, ui) {
+			$.getJSON('lib/appliance/enertex.iprouter.php?server={{ server }}&pass={{ password }}', function (data) {
+				$('#{{ uid }} .from').html(data.rx_from_knx + '<img src="lib/appliance/pics/dir_in.png" alt="from">');
+				$('#{{ uid }} .to').html(data.tx_to_knx + '<img src="lib/appliance/pics/dir_out.png" alt="to">');
+	
+				var ret = '';
+				for (var i in data.tunnels) {
+	
+					ret += '<div class="traffic">' + data.tunnels[i].tx_tun_req + ' t<img src="lib/appliance/pics/dir_in.png" alt="in">';
+					ret += '<br />' + data.tunnels[i].rx_tun_req + ' t<img src="lib/appliance/pics/dir_out.png" alt="out"></div>';
+					ret += '<div class="tunnel">T ' + i + '</div>';
+					ret += '<div class="address">knx: ' + data.tunnels[i].knx_address + '<br />ip: ' + (data.tunnels[i].ip_control ? data.tunnels[i].ip_control : data.tunnels[i].hpai_control) + '</div>';
+				}
+				$('#{{ uid }} .tunnels').html(ret);
+				$('#{{ uid }} .version').html(data.date + ', up: ' + data.uptime + ', v ' + data.firmware_version);
+			})
+				.error(notify.json);
+		});
+	</script>
+{% endmacro %}
