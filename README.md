@@ -5,6 +5,12 @@
 [![Dependency Status](https://gemnasium.com/badges/github.com/Apollon77/ioBroker.smartvisu.svg)](https://gemnasium.com/github.com/Apollon77/ioBroker.smartvisu)
 [![Code Climate](https://codeclimate.com/github/Apollon77/ioBroker.smartvisu/badges/gpa.svg)](https://codeclimate.com/github/Apollon77/ioBroker.smartvisu)
 
+**Tests:** Linux/Mac: [![Travis-CI](http://img.shields.io/travis/Apollon77/ioBroker.smartvisu/master.svg)](https://travis-ci.org/Apollon77/ioBroker.smartvisu)
+Windows: [![AppVeyor](https://ci.appveyor.com/api/projects/status/github/Apollon77/ioBroker.smartvisu?branch=master&svg=true)](https://ci.appveyor.com/project/Apollon77/ioBroker-smartvisu/)
+
+[![NPM](https://nodei.co/npm/iobroker.smartvisu.png?downloads=true)](https://nodei.co/npm/iobroker.smartvisu/)
+
+
 This adapter allows to run SmartVISU (http://www.smartvisu.de/) in ioBroker.
 
 SmartVISU (https://github.com/Martin-Gleiss/smartvisu) is ... (some more conten here? :-)
