@@ -61,7 +61,7 @@ function installSmartVisu(callback) {
         	if (error) {
         		adapter.log.error('Copy failed: ' + error);
         	} else {
-                adapter.log.info(JSON.stringify(results));
+                //adapter.log.info(JSON.stringify(results));
                 adapter.log.info('Copied ' + results.length + ' files to ' + adapter.config.docRoot);
                 callback();
         	}
