@@ -1,6 +1,9 @@
 ![Logo](admin/smartvisu.png)
 # ioBroker.smartvisu
-=================
+[![NPM version](http://img.shields.io/npm/v/iobroker.smartvisu.svg)](https://www.npmjs.com/package/iobroker.smartvisu)
+[![Downloads](https://img.shields.io/npm/dm/iobroker.smartvisu.svg)](https://www.npmjs.com/package/iobroker.smartvisu)
+[![Dependency Status](https://gemnasium.com/badges/github.com/Apollon77/ioBroker.smartvisu.svg)](https://gemnasium.com/github.com/Apollon77/ioBroker.smartvisu)
+[![Code Climate](https://codeclimate.com/github/Apollon77/ioBroker.smartvisu/badges/gpa.svg)](https://codeclimate.com/github/Apollon77/ioBroker.smartvisu)
 
 This adapter allows to run SmartVISU (http://www.smartvisu.de/) in ioBroker.
 
