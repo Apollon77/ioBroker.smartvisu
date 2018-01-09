@@ -27,4 +27,5 @@ ratings:
 exclude_paths:
 - test/
 - lib/utils.js
-- Gruntfile.js
+- gulpfile.js
+- dist/
