@@ -88,7 +88,9 @@ which php-cgi
 ```
 
 ### Windows
-Download a PHP-for-WIndows package from http://windows.php.net/download/ depending on your system (e.g. http://windows.php.net/downloads/releases/archives/php-7.1.0-Win32-VC14-x64.zip). Extract into a directory of your choice and add this directory to the system PATH. Alternatively enter the location path of "php-cgi.exe" into the adapter configuration.
+Download a PHP-for-WIndows package from http://windows.php.net/download/ depending on your system (e.g. http://windows.php.net/downloads/releases/archives/php-7.1.0-Win32-VC14-x64.zip). Recommended is to use a "x64 Thread Safe" build.
+
+Extract into a directory of your choice and add this directory to the system PATH. Alternatively enter the location path of "php-cgi.exe" into the adapter configuration.
 
 ### Verify availability of php-cgi for adapter and version
 When you have started the adapter you can use http://<host>:<Serverport>/phpinfo.php to see the details of the installed PHP. If you do not get the phpinfo-Page something is wrong with the php-cgi availability.
