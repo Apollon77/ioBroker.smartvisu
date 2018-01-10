@@ -17,6 +17,7 @@ before_install:
   - echo $PHP_PATH
   - php-cgi -v
 before_script:
+  - cp ./sphp-patch/* node_mopdules/sphp/
   - npm install winston@2.3.1
   - npm install https://github.com/ioBroker/ioBroker.js-controller/tarball/master --production
 after_success:
