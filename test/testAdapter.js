@@ -123,9 +123,22 @@ describe('Test ' + adapterShortName + ' adapter', function() {
         this.timeout(80000);
         setTimeout(function() {
             request('http://127.0.0.1:20000/phpinfo.php', function (error, response, body) {
-                console.log('BODY: ' + body);
+                //console.log('BODY: ' + body);
                 expect(error).to.be.not.ok;
                 expect(body.indexOf('<title>phpinfo()</title>')).to.be.not.equal(-1);
+                expect(response.statusCode).to.equal(200);
+                done();
+            });
+        }, 60000);
+    });
+
+    it('Test ' + adapterShortName + ' adapter: Get base.php', function (done) {
+        this.timeout(80000);
+        setTimeout(function() {
+            request('http://127.0.0.1:20000/lib/base/base.php', function (error, response, body) {
+                //console.log('BODY: ' + body);
+                expect(error).to.be.not.ok;
+                expect(body.indexOf('* J A V A S C R I P T   D Y N A M I C   E X T E N T I O N S')).to.be.not.equal(-1);
                 expect(response.statusCode).to.equal(200);
                 done();
             });
