@@ -57,7 +57,7 @@
         "loglevel": "info",
         "type": "visualization",
         "localLink": "%protocol%://%ip%:%serverPort%/index.php",
-        "restartAdapters": ["smartvisu"]
+        "stopBeforeUpdate": true
     },
     "native": {
         "serverPort": 8100,
