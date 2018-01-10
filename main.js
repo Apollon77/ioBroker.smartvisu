@@ -15,7 +15,7 @@ var dataDir = path.normalize(utils.controllerDir + path.sep + require(utils.cont
 var recCopy = require('recursive-copy');
 
 var express = require('express');
-var sphp = require('sphp');
+var sphp;
 
 var app = express();
 var serving = false;
@@ -43,7 +43,9 @@ process.on('SIGINT', function () {
 });
 
 process.on('uncaughtException', function (err) {
-    adapter.log.warn('Exception: ' + err);
+    if (adapter && adapter.log) {
+        adapter.log.warn('Exception: ' + err);
+    }
     shutdownServer();
 });
 
@@ -122,7 +124,8 @@ function serveSmartVisu() {
 
 function main() {
     patchSPhp();
-    
+    sphp = require('sphp');
+
     adapter.config.docRoot = adapter.config.docRoot || adapter.namespace.replace('.','_');
     adapter.config.docRoot = adapter.config.docRoot.replace(/\\/g, '/');
 
