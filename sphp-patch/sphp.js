@@ -192,7 +192,7 @@ sphp.exec = function (request, callback) {
         request._parsedUrl = url.parse(request.socket.upgradeReq.url);
     }
 
-    console.log('EXEC: ' + path.join(sphp.docRoot, request._parsedUrl.pathname));
+    //console.log('EXEC: ' + path.join(sphp.docRoot, request._parsedUrl.pathname));
     // Check that script exists
     fs.exists(path.join(sphp.docRoot, request._parsedUrl.pathname), function (exists) {
         // Deploy worker
