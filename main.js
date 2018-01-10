@@ -73,6 +73,36 @@ function installSmartVisu(callback) {
     }
 }
 
+function patchSPhp() {
+    var fs = require('fs');
+    var path;
+    try {
+        path = require.resolve('sphp');
+    } catch (e) {
+
+    }
+
+    if (path) {
+        path = path.replace(/\\/g, '/');
+        path = path.substring(0, path.lastIndexOf('/') + 1);
+    }
+
+    if (fs.existsSync(path)) {
+        try {
+            fs.writeFileSync(path + 'sphp.js', fs.readFileSync(__dirname + '/sphp-patch/sphp.js'));
+            adapter.log.info('Patch sphp applied');
+        } catch (e) {
+            console.error('Cannot update sphp.js: ' + e);
+        }
+        try {
+            fs.writeFileSync(path + 'php_worker.php', fs.readFileSync(__dirname + '/sphp-patch/php_worker.php'));
+            adapter.log.info('Patch php_worker applied');
+        } catch (e) {
+            console.error('Cannot update php_worker.php: ' + e);
+        }
+    }
+}
+
 function serveSmartVisu() {
     if (adapter.config.phpCgiPath) {
         sphp.cgiEngine = adapter.config.phpCgiPath;
@@ -91,6 +121,8 @@ function serveSmartVisu() {
 
 
 function main() {
+    patchSPhp();
+    
     adapter.config.docRoot = adapter.config.docRoot || adapter.namespace.replace('.','_');
     adapter.config.docRoot = adapter.config.docRoot.replace(/\\/g, '/');
 
