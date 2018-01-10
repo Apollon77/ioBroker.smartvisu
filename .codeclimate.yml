@@ -29,3 +29,4 @@ exclude_paths:
 - lib/utils.js
 - gulpfile.js
 - dist/
+- sphp-patch/
