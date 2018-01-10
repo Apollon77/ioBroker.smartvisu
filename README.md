@@ -20,9 +20,6 @@ SmartVISU (https://github.com/Martin-Gleiss/smartvisu) is ... (some more conten 
 The adapter needs PHP-CGI on the computer where it runs because SmartVISU is based on PHP.
 Some more information on the PHP requirements can be found below.
 
-**Important note for First time Windows installations!!**
-After the first start you need to restart the adapter because he will patch two files from a used libraries where the changes are not yet incorporated in an update. Only after one restart everything will work!
-
 ## SmartVisu ioBroker Example
 By Default the Adapter will install a slightly customized pre-version of SmartVisu 2.9. An "ioBroker SocketIO" driver is included to connect to the ioBroker data. The driver is configured by default to connect to the SocketIO port 8084 on the same host where the SmartVISU adapter is running too. You can change the configuration in SmartVISU UI or by editing config.ini
 
