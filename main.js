@@ -2,9 +2,10 @@
  * SMartVISU Adapter
  */
 
-/* jshint -W097 */
-// jshint strict:false
-/*jslint node: true */
+ /* jshint -W097 */
+ // jshint strict:true
+ /*jslint node: true */
+ /*jslint esversion: 6 */
 'use strict';
 
 var utils = require(__dirname + '/lib/utils'); // Get common adapter utils
