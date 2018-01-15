@@ -34,7 +34,14 @@
   },
   "main": "main.js",
   "scripts": {
-    "test": "node node_modules/mocha/bin/mocha --exit"
+    "test": "nyc --reporter=lcov node_modules/mocha/bin/mocha --exit"
+  },
+  "nyc": {
+    "exclude": ["!**/node_modules/"],
+    "include": [
+        "**/tmp/node_modules/iobroker.smartvisu/*.js"
+    ],
+    "produce-source-map": true
   },
   "bugs": {
     "url": "https://github.com/Apollon77/ioBroker.smartvisu/issues"
