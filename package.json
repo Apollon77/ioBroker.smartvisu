@@ -30,7 +30,8 @@
     "gulp": "^3.9.1",
     "mocha": "^4.1.0",
     "chai": "^4.1.2",
-    "request": "^2.69.0"
+    "request": "^2.69.0",
+    "nyc": "*"
   },
   "main": "main.js",
   "scripts": {
