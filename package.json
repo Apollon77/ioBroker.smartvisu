@@ -30,19 +30,11 @@
     "gulp": "^3.9.1",
     "mocha": "^4.1.0",
     "chai": "^4.1.2",
-    "request": "^2.69.0",
-    "nyc": "*"
+    "request": "^2.69.0"
   },
   "main": "main.js",
   "scripts": {
-    "test": "nyc --reporter=lcov node_modules/mocha/bin/mocha --exit"
-  },
-  "nyc": {
-    "exclude": ["!**/node_modules/"],
-    "include": [
-        "**/tmp/node_modules/iobroker.smartvisu/*.js"
-    ],
-    "produce-source-map": true
+    "test": "node node_modules/mocha/bin/mocha --exit"
   },
   "bugs": {
     "url": "https://github.com/Apollon77/ioBroker.smartvisu/issues"
