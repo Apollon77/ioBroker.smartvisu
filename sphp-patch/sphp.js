@@ -21,7 +21,7 @@ var path = require('path');
 var child_process = require('child_process');
 var url = require('url');
 
-var moduleVersion = 'Snappy PHP ' + require('.' + path.sep + 'package.json').version;
+var moduleVersion = 'Snappy PHP ' + require(__dirname + path.sep + 'package.json').version;
 
 // Define module object
 var sphp = {};
