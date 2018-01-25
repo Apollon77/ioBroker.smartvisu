@@ -1,8 +1,7 @@
 <?php
 /* ======================================================================== *\
   Snappy PHP Script Launcher
-  (c) Copyrights Paragi, Simon Riget 2013
-
+ 
   Pre burner for PHP script execution with note.js
 
   This script initialise various predefined globals in PHP
@@ -16,12 +15,16 @@ todo:
   set ini open_basedir
   file upload
 
+ (c) Copyrights Paragi, Simon Riget 2013
+ Licence MIT
 \* ======================================================================== */
 // Prevent that the input socket times out, before it is used
 ini_set ("default_socket_timeout","-1" );
 
 // include pre load script
-@include(getenv('preload'));
+$pre_load_script = getenv('preload');
+if(!empty($pre_load_script))
+  include($pre_load_script);
 
 //   Get client request and server information passed throug stdin.
 $request=json_decode(file_get_contents("php://stdin"),true);
@@ -35,7 +38,6 @@ foreach($request as $key => $value)
 unset($request, $key, $value);
 
 // Set server signature
-$_SERVER['GATEWAY_INTERFACE'] = "PHP CGI and SPHP worker 0.2.0";
 $_SERVER['SERVER_SIGNATURE'] =
    "<address>"
    . $_SERVER['SERVER_SOFTWARE']
