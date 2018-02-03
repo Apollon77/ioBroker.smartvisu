@@ -22,7 +22,7 @@
     "url": "https://github.com/Apollon77/ioBroker.smartvisu"
   },
   "dependencies": {
-    "sphp": "^0.5.2",
+    "sphp": "^0.6.2",
     "express": "^4",
     "recursive-copy": "^2.0.8"
   },

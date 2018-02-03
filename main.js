@@ -16,7 +16,7 @@ var dataDir = path.normalize(utils.controllerDir + path.sep + require(utils.cont
 var recCopy = require('recursive-copy');
 
 var express = require('express');
-var sphp;
+var sphp = require('sphp');
 
 var app = express();
 var serving = false;
@@ -76,7 +76,7 @@ function installSmartVisu(callback) {
     }
 }
 
-function patchSPhp() {
+/*function patchSPhp() {
     var fs = require('fs');
     var path;
     try {
@@ -104,11 +104,13 @@ function patchSPhp() {
             console.error('Cannot update php_worker.php: ' + e);
         }
     }
-}
+}*/
 
 function serveSmartVisu() {
+    var options = {};
+    options.docRoot = adapter.config.docRoot;
     if (adapter.config.phpCgiPath) {
-        sphp.cgiEngine = adapter.config.phpCgiPath;
+        options.cgiEngine = adapter.config.phpCgiPath;
         adapter.log.info('Use PHP-CGI: ' + adapter.config.phpCgiPath);
     }
 
@@ -118,15 +120,13 @@ function serveSmartVisu() {
         serving = true;
     });
 
-    app.use(sphp.express(adapter.config.docRoot));
+    app.use(sphp.express(options));
     app.use(express.static(adapter.config.docRoot));
 }
 
 
 function main() {
-    patchSPhp();
-    sphp = require('sphp');
-
+    //patchSPhp();
     adapter.config.docRoot = adapter.config.docRoot || adapter.namespace.replace('.','_');
     adapter.config.docRoot = adapter.config.docRoot.replace(/\\/g, '/');
 
