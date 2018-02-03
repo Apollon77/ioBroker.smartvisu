@@ -24,7 +24,6 @@ install:
   - cd c:\projects\%APPVEYOR_PROJECT_NAME%
   - ps: 'Install-Product node $env:nodejs_version $env:platform'
   - npm install
-  - cp ./sphp-patch/* node_modules/sphp/
   - npm install winston@2.3.1
   - 'npm install https://github.com/ioBroker/ioBroker.js-controller/tarball/master --production'
 test_script:
