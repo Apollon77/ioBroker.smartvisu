@@ -4,25 +4,29 @@ environment:
     - nodejs_version: '4'
     - nodejs_version: '6'
     - nodejs_version: '8'
+    - nodejs_version: '10'
 platform:
   - x86
   - x64
 cache:
-    - c:\php -> appveyor.yml
+  - 'c:\php -> appveyor.yml'
 init:
-    - SET PATH=c:\php\71;%PATH%
-    - SET PHP_PATH=c:\php\71\php-cgi.exe
+  - 'SET PATH=c:\php\71;%PATH%'
+  - 'SET PHP_PATH=c:\php\71\php-cgi.exe'
 clone_folder: 'c:\projects\%APPVEYOR_PROJECT_NAME%'
 install:
-  - IF EXIST c:\php\71 (SET PHP=0) ELSE (SET PHP=1)
-  - IF %PHP%==1 mkdir c:\php\71
-  - IF %PHP%==1 cd c:\php\71
-  - IF %PHP%==1 appveyor DownloadFile http://windows.php.net/downloads/releases/archives/php-7.1.0-Win32-VC14-x64.zip
+  - 'IF EXIST c:\php\71 (SET PHP=0) ELSE (SET PHP=1)'
+  - 'IF %PHP%==1 mkdir c:\php\71'
+  - 'IF %PHP%==1 cd c:\php\71'
+  - 'IF %PHP%==1 appveyor DownloadFile http://windows.php.net/downloads/releases/archives/php-7.1.0-Win32-VC14-x64.zip'
   - IF %PHP%==1 7z x php-7.1.0-Win32-VC14-x64.zip >nul
-  - set PATH=c:\php\71\;%PATH%
-  - c:\php\71\php-cgi.exe -v
-  - cd c:\projects\%APPVEYOR_PROJECT_NAME%
+  - 'set PATH=c:\php\71\;%PATH%'
+  - 'c:\php\71\php-cgi.exe -v'
+  - 'cd c:\projects\%APPVEYOR_PROJECT_NAME%'
   - ps: 'Install-Product node $env:nodejs_version $env:platform'
+  - ps: '$NpmVersion = (npm -v).Substring(0,1)'
+  - ps: 'if($NpmVersion -eq 5) { npm install -g npm@5 }'
+  - ps: npm --version
   - npm install
   - npm install winston@2.3.1
   - 'npm install https://github.com/ioBroker/ioBroker.js-controller/tarball/master --production'
