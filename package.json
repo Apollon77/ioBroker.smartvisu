@@ -24,7 +24,7 @@
   "dependencies": {
     "sphp": "^0.6.2",
     "express": "^4",
-    "recursive-copy": "^2.0.8"
+    "recursive-copy": "2.0.9"
   },
   "devDependencies": {
     "gulp": "^4.0.0",
