@@ -23,14 +23,14 @@
   "dependencies": {
     "sphp": "^0.6.2",
     "express": "^4",
-    "recursive-copy": "^2.0.8"
+    "recursive-copy": "^2.0.8",
+    "@iobroker/adapter-core": "^1.0.3"
   },
   "devDependencies": {
     "gulp": "^4.0.0",
     "mocha": "^6.0.2",
     "chai": "^4.1.2",
-    "request": "^2.69.0",
-    "@iobroker/adapter-core": "^1.0.3"
+    "request": "^2.69.0"
   },
   "main": "main.js",
   "scripts": {
