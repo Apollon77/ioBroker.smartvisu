@@ -46,6 +46,7 @@
             "nl": "docs/nl/admin.md",
             "pt": "docs/pt/admin.md"
         },
+        "license": "MIT",
         "platform": "Javascript/Node.js",
         "mode": "daemon",
         "icon": "smartvisu.png",
@@ -57,7 +58,8 @@
         "loglevel": "info",
         "type": "visualization",
         "localLink": "%protocol%://%ip%:%serverPort%/index.php",
-        "stopBeforeUpdate": true
+        "stopBeforeUpdate": true,
+        "dataDir": "smartvisu_%INSTANCE%"
     },
     "native": {
         "serverPort": 8100,
