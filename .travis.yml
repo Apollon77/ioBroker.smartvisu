@@ -10,8 +10,8 @@ node_js:
 before_install:
   - 'if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export CC=clang++; export CXX=clang++; export CXXFLAGS=-std=c++11; fi'
   - 'if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi'
-  - 'if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then travis_wait 30 brew install --with-cgi php@7.2; fi'
-  - 'if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH="/usr/local/opt/php@7.1/bin:/usr/local/opt/php@7.2/sbin:$PATH"; fi'
+  - 'if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then travis_wait 30 brew install php; fi'
+  - 'if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH="/usr/local/opt/php/bin:/usr/local/opt/php/sbin:$PATH"; fi'
   - 'if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX=g++-4.9; fi'
   - export PHP_PATH="$(which php-cgi)"
   - echo $PHP_PATH
