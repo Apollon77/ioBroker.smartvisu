@@ -4,7 +4,6 @@
 [![Greenkeeper badge](https://badges.greenkeeper.io/Apollon77/ioBroker.smartvisu.svg)](https://greenkeeper.io/)
 [![NPM version](http://img.shields.io/npm/v/iobroker.smartvisu.svg)](https://www.npmjs.com/package/iobroker.smartvisu)
 [![Downloads](https://img.shields.io/npm/dm/iobroker.smartvisu.svg)](https://www.npmjs.com/package/iobroker.smartvisu)
-[![Dependency Status](https://gemnasium.com/badges/github.com/Apollon77/ioBroker.smartvisu.svg)](https://gemnasium.com/github.com/Apollon77/ioBroker.smartvisu)
 [![Code Climate](https://codeclimate.com/github/Apollon77/ioBroker.smartvisu/badges/gpa.svg)](https://codeclimate.com/github/Apollon77/ioBroker.smartvisu)
 
 **Tests:** Linux/Mac: [![Travis-CI](http://img.shields.io/travis/Apollon77/ioBroker.smartvisu/master.svg)](https://travis-ci.org/Apollon77/ioBroker.smartvisu)
