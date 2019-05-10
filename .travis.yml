@@ -13,7 +13,7 @@ before_install:
   - 'if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi'
   - 'if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then travis_wait 30 brew install php; fi'
   - 'if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH="/usr/local/opt/php/bin:/usr/local/opt/php/sbin:$PATH"; fi'
-  - 'if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX=g++-4.9; fi'
+  - 'if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX=g++-6; fi'
   - export PHP_PATH="$(which php-cgi)"
   - echo $PHP_PATH
   - php-cgi -v
@@ -29,5 +29,5 @@ addons:
       - ubuntu-toolchain-r-test
       - sourceline: 'ppa:ondrej/php'
     packages:
-      - g++-4.9
+      - g++-6
       - php7.2-cgi
