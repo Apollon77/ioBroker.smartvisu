@@ -24,7 +24,7 @@
     "sphp": "^0.6.2",
     "express": "^4",
     "recursive-copy": "^2.0.8",
-    "@iobroker/adapter-core": "^1.0.3"
+    "@iobroker/adapter-core": "^2.1.0"
   },
   "devDependencies": {
     "gulp": "^4.0.0",
