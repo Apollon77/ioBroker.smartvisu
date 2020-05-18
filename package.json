@@ -23,7 +23,7 @@
   "dependencies": {
     "sphp": "^0.6.2",
     "express": "^4",
-    "recursive-copy": "^2.0.8",
+    "recursive-copy": "^2.0.10",
     "@iobroker/adapter-core": "^1.0.3"
   },
   "devDependencies": {
