@@ -8,6 +8,7 @@
  * -----------------------------------------------------------------------------
  */
 
+const SmartvisuButtonTypes = array('micro', 'mini', 'midi', 'icon');
 
 // -----------------------------------------------------------------------------
 // Filters for Twig
@@ -28,7 +29,7 @@ function twig_bit($val)
 
 function twig_substr($val, $start, $end = null)
 {
-	if ($end)
+	if (isset($end))
 		$ret = substr($val, $start, $end);
 	else
 		$ret = substr($val, $start);
@@ -113,6 +114,7 @@ function twig_dir($dir, $filter = '(.*)')
 			if (preg_match("#".$filter."$#i", $item, $itemparts) > 0)
 			{
 				$name = str_replace("_", " ", $itemparts[1]);
+
 				$ret[$name] = array(
 					"path" => $dir.'/'.$itemparts[0],
 					"file" => $itemparts[0],
@@ -126,63 +128,72 @@ function twig_dir($dir, $filter = '(.*)')
 
 	// sort
 	ksort($ret);
-
 	return $ret;
 }
 
 function twig_docu($filenames = null)
-{
+{	
 	if($filenames == null) {
-		$filenames = array_merge(twig_dir('widgets', '(.*.\.html)'), twig_dir('dropins/widgets', '(.*.\.html)'));
+		$filenames = array_merge(twig_dir('widgets', '(.*.\.html)'), twig_dir('dropins', '(.*.\.html)'), twig_dir('dropins/widgets', '(.*.\.html)'), twig_dir('dropins/shwidgets', '(.*.\.html)'));
+		if(twig_isdir('pages/'.config_pages.'/widgets'))
+			$filenames = array_merge($filenames, twig_dir('pages/'.config_pages.'/widgets', '(.*.\.html)'));
 	}
 	elseif(!is_array($filenames))
-		$filenames = array($filenames);
+		if(twig_isfile($filenames) == false && $filenames != const_path.'widgets/icon.html' && $filenames != const_path.'widgets/basic.html') // basic.html needed for template-checker
+			{
+				$filenames = array($filenames);
+				$filenames = array_merge(twig_dir('dropins', '(.*.\.html)'), twig_dir('dropins/widgets', '(.*.\.html)'), twig_dir('dropins/shwidgets', '(.*.\.html)'));
+			}
+		else
+			$filenames = array($filenames);
+
 
 	$ret = array();
-	
+
 	foreach($filenames as $filename) {
+
 		if(is_array($filename))
 			$filename = const_path.$filename['path'];
-	
 		$file = file_get_contents($filename);
-	
+
+
 		// Header
 		preg_match_all('#.+?@(.+?)\W+(.*)#i', substr($file, 0, strpos($file, '*/') + 2), $header);
 
-		// Body 
+		// Body
 		preg_match_all('#\/\*\*[\r\n]+(.+?)\*\/\s+?\{\% *macro(.+?)\%\}.*?\{\% *endmacro *\%\}#is', strstr($file, '*/'), $widgets);
-	
+
 		if (count($widgets[2]) > 0)
 		{
 			foreach ($widgets[2] as $no => $macro)
 			{
 				$rettmp = array();
-				
+
 				preg_match_all('#(.+?)\((.+?)(\)|,\s+_)#i', $macro, $desc); // param scanning ends on first param name beginning with _
 				$rettmp['name'] = trim($desc[1][0]);
 				$rettmp['params'] = trim($desc[2][0]);
-				
+
 				$docu = $widgets[1][$no];
-	
+
 				$rettmp['desc'] = trim(str_replace('* ', '', substr($docu, 0, strpos($docu, '@'))));
-				
+
 				if (substr($rettmp['desc'], -1, 1) == '*')
 					$rettmp['desc'] = substr($rettmp['desc'], 0, -1);
-				
-				// Header-Tags 
+
+				// Header-Tags
 				foreach ($header[1] as $headerno => $headertag)
 				{
 					if (!($headertag == "author" and trim($header[2][$headerno]) == "Martin Gleiß"))
 						$rettmp[$headertag] = trim($header[2][$headerno]);
 				}
-	
+
 				$rettmp['subpackage'] = substr(strtolower(utf8_decode(basename($filename))), 0, -5);
 				$rettmp['command'] = $rettmp['subpackage'].".".$rettmp['name'];
 				$rettmp['call'] = $rettmp['command']."(".$rettmp['params'].")";
-	
+
 				// Widget-Tags
 				$tags = preg_split('#[\r\n]+[\*\s]*@#', $docu);
-	
+
 				$param = 0;
 				$params = explode(',', $rettmp['params']);
 				$rettmp['param'] = array();
@@ -190,7 +201,7 @@ function twig_docu($filenames = null)
 				foreach ($tags as $tagstring)
 				{
 					preg_match('#^(.+?)\s+({(.+?)(\[\??\])?(\(.*?\))?(=.*?)?}\s+)?(.*)$#is', $tagstring, $tag);
-					 
+
 					if ($tag[1] == 'param')
 					{
 						$p = array('desc' => trim($tag[7]));
@@ -211,15 +222,22 @@ function twig_docu($filenames = null)
 								}
 								else
 									$p['valid_values'] = explode(',', substr($tag[5],1,-1));
+								
+								if ($p['type'] == 'type')
+									$p['valid_values'] = array_merge(SmartvisuButtonTypes, $p['valid_values']);
 							}
+							elseif ($p['type'] == 'type')
+								$p['valid_values'] = SmartvisuButtonTypes;
+							
 							$p['optional'] = $tag[6] != '';
 							if($p['optional'] && $tag[6] != '=')
 								$p['default'] = substr($tag[6],1);
-							
+
 							// valid_values
 							// array_form must may
 						}
-						$rettmp['param'][trim($params[$param++])] = $p;
+						if (isset($params[$param])) 			//wvhn@v3.1: hidden parameter starting with "_" must be omitted
+							$rettmp['param'][trim($params[$param++])] = $p;
 					}
 					elseif ($tag[1] == 'see')
 					{
@@ -229,22 +247,32 @@ function twig_docu($filenames = null)
 					else
 						$rettmp[$tag[1]] = trim($tag[7]);
 				}
-	
+
 				$ret[$rettmp['subpackage'].'.'.$rettmp['name']] = $rettmp;
 			}
-	
+
 			//ksort($ret); // as of Version 2.9: Don't sort but use order in sourcefile
 		}
 		else
 		{
-			foreach ($header[1] as $headerno => $headertag)
-			{
-				if (!($headertag == "author" and trim($header[2][$headerno]) == "Martin Gleiß"))
-					$ret[$headertag] = trim($header[2][$headerno]);
+			//here we go with files where no widgets have been found - possibly normal visu pages or docu pages
+			//file from ./dropins or subfolder could be a docu page, file from pages/config_pages/widgets,too.
+			//otherwise return header
+			$endheader= strpos($file, '*/') + 2;
+			$dropins = strpos($filename,'dropins');
+			$dropins = $dropins + strpos($filename,'pages/'.config_pages.'/widgets');
+			$docupage = strpos(str_replace(' ', '', substr($file, $endheader, 40)),'{%extends"custom/widget_');
+						
+			if ($dropins == false or ($dropins !== false and $docupage == false)) {
+				foreach ($header[1] as $headerno => $headertag)
+				{
+					if (!($headertag == "author" and trim($header[2][$headerno]) == "Martin Gleiß"))
+						$ret[$headertag] = trim($header[2][$headerno]);
+				}
 			}
 		}
 	}
-	
+
 	return $ret;
 }
 
@@ -300,17 +328,21 @@ function twig_configmeta($filename)
  *
  * @return string
  */
-function twig_lang($subset, $key, $subkey = null)
+function twig_lang($subset, $key = null, $subkey = null)
 {
 	static $lang;
 
 	if (!$lang)
 		$lang = get_lang();
 
-	if($subkey == null)
-		return $lang[$subset][$key];
-	else
-		return $lang[$subset][$key][$subkey];
+	if(!isset($subkey)) 
+		if(!isset($key))
+			return $lang[$subset];
+		else
+			return $lang[$subset][$key];
+	else 
+		if (isset($lang[$subset][$key][$subkey]))
+			return $lang[$subset][$key][$subkey]; 
 }
 
 /**
@@ -370,6 +402,55 @@ function twig_implode($mixed, $suffix = '', $delimiter = '.')
 		$ret = $mixed.$suffix;
 
 	return $ret;
+}
+
+
+//
+// get items from file masteritem.json (just the names) into an array
+//
+function twig_items () {
+	if (is_file(const_path.'pages/'.config_pages.'/masteritem.json')) {
+		@$myFile = file_get_contents(const_path.'pages/'.config_pages.'/masteritem.json');
+		$Items1 = str_replace('[','',$myFile);
+		$Items1 = str_replace(']','',$Items1);
+		$Items1 = str_replace("\"",'',$Items1);
+		$Items2 = explode(",",$Items1);
+		$itemlist = array();
+		$i = 0;
+		
+		foreach ($Items2 as $key) { 
+			$itemlist[$i] = trim(explode('|',$key)[0]);
+			$i = $i+1;
+		}
+	}
+	else
+		$itemlist[0] = 'masteritem file not found';
+	
+	return $itemlist;
+}
+
+//
+// check if file exists in the path
+//
+function twig_asset_exists($file) {
+	$fileExists = 0;
+	$requestpages = (isset($_REQUEST['pages']) && $_REQUEST['pages'] != '') ? $_REQUEST['pages'] : config_pages;
+	if(strpos($file, '/') === false) {
+		if(is_file(const_path . 'widgets/'. $file)) $fileExists = 1;
+		if(is_file(const_path . 'dropins/'. $file)) $fileExists = 1;
+		if(is_file(const_path . 'dropins/widgets/' . $file )) $fileExists = 1;
+		if(is_file(const_path . 'pages/' . $requestpages .'/widgets/'. $file )) $fileExists = 1;
+		$searchpath = 'in ./widgets, ./dropins, ./dropins/widgets and ./pages/'. $requestpages .'/widgets/';
+	} else 	{	
+		// add const_path if $file is relative
+		if (substr($file, 0, 1) != '/') 
+			if(is_file(const_path.$file)) 
+				$fileExists = 1; 	
+		$searchpath = 'for '. $file;
+	}
+	if ($fileExists == 0) debug_to_console($file.' not found. Looked '.$searchpath);
+	
+	return $fileExists;
 }
 
 ?>

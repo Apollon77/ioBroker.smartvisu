@@ -1,13 +1,19 @@
 /**
  * -----------------------------------------------------------------------------
  * @package     smartVISU
- * @author      Raik Alber and Martin Gleiß
+ * @author      Raik Alber and Martin Gleiss
  * @copyright   2013
  * @license     GPL [http://www.gnu.de]
  * @version        0.2
  * -----------------------------------------------------------------------------
  * @label       knxd / eibd
+ * @hide		driver_tlsport
  * @hide        driver_autoreconnect
+ * @hide		reverseproxy
+ * @hide		driver_ssl
+ * @hide		driver_username
+ * @hide		driver_password
+ * @hide		sv_hostname
  */
 
 
@@ -17,8 +23,8 @@
  */
 var io = {
 
-	// the adress
-	adress: '',
+	// the address
+	address: '',
 
 	// the port
 	port: '',
@@ -60,27 +66,26 @@ var io = {
 	/**
 	 * Initializion of the driver
 	 *
-	 * @param      the ip or url to the system (optional)
-	 * @param      the port on which the connection should be made (optional)
+	 * Driver config parameters are globally available as from v3.2
 	 */
-	init: function (adress, port) {
-		io.adress = adress;
-		io.port = port;
+	init: function () {
+		io.address = sv.config.driver.address;
+		io.port = sv.config.driver.port;
 		io.stop();
 	},
 
 	/**
 	 * Lets the driver work
 	 */
-	run: function (realtime) {
-		// old items
+	run: function () {
+		// refresh all widgets with values from the buffer
 		widget.refresh();
 
-		// new items
+		// get item updates from the backend
 		io.all(true);
 
 		// run polling
-		if (realtime) {
+		if (sv.config.driver.realtime) {
 			io.start();
 		}
 	},
@@ -138,9 +143,9 @@ var io = {
 	convertData: function (inputData, dataType, direction) {
 
 		var returnData = inputData;
-		if (dataType == '9.xxx') {
+		if (dataType === '9.xxx') {
 
-			if (direction == 'from') {
+			if (direction === 'from') {
 
 				data = parseInt(inputData, 16).toString(10);
 				wert = (data & 0x07ff);
@@ -188,26 +193,26 @@ var io = {
 
 			}
 		}
-		else if (dataType == '1.001') {
-			if (direction == 'to') {
+		else if (dataType === '1.001') {
+			if (direction === 'to') {
 
 				returnData = '8' + inputData;
 			}
 		}
-		else if (dataType = '13.xx') {
+		else if (dataType === '13.xxx') {
 
 			returnData = parseInt(inputData, 16);
 		}
-		else if (dataType == '5.001') {
+		else if (dataType === '5.001') {
 
-			if (direction == 'from') {
+			if (direction === 'from') {
 
 				returnData = inputData;
 				//returnData = Math.round(parseInt(inputData, 10) / 2.55);
 
 
 			}
-			else if (direction == 'to') {
+			else if (direction === 'to') {
 
 				returnData = inputData;
 				returnData = Math.round(inputData * 2.55) + 0x8000;
@@ -223,7 +228,7 @@ var io = {
 	 */
 	get: function (item) {
 
-		$.ajax({ url: 'http://' + io.adress + ':' + io.port + '/cgi-bin/r?' + getForUrl,
+		$.ajax({ url: 'http://' + io.address + ':' + io.port + '/cgi-bin/r?' + getForUrl,
 			type: "GET",
 			dataType: 'json',
 			async: true,
@@ -232,7 +237,7 @@ var io = {
 			.done(function (response) {
 				widget.update(item, response[item]);
 			})
-			.error(notify.error('Driver: eibd', "Error reading item!"));
+			.fail(notify.message('error', 'Driver: eibd', "Error reading item!"));
 	},
 
 	/**
@@ -243,7 +248,7 @@ var io = {
 
 		io.stop();
 
-		$.ajax({ url: 'http://' + io.adress + ':' + io.port + '/cgi-bin/w',
+		$.ajax({ url: 'http://' + io.address + ':' + io.port + '/cgi-bin/w',
 			data: ({a: io.getItemFromItem(item), v: io.convertData(val, io.getDataTypeFromItem(item), 'to'), ts: $.now()}),
 			type: "GET",
 			dataType: 'json',
@@ -256,7 +261,7 @@ var io = {
 					io.start();
 				}
 			})
-			.error(notify.error('Driver: eibd', "Error writing item!"));
+			.fail(notify.message('error', 'Driver: eibd', "Error writing item!"));
 	},
 
 	/**
@@ -290,7 +295,7 @@ var io = {
 
 			getForUrl = getForUrl + '&i=' + io.actualIndexNumber;
 
-			io.actualRequest = $.ajax({ url: 'http://' + io.adress + ':' + io.port + '/cgi-bin/r?' + getForUrl,
+			io.actualRequest = $.ajax({ url: 'http://' + io.address + ':' + io.port + '/cgi-bin/r?' + getForUrl,
 				type: 'GET',
 				dataType: 'json',
 				async: true,
@@ -320,7 +325,7 @@ var io = {
 						io.all();
 					}
 					else {
-						notify.error('Driver: eibd', response);
+						notify.message('error', 'Driver: eibd', response);
 					}
 				})
 		}
@@ -354,6 +359,14 @@ var io = {
 		requestItem = itemArray[0] + '/' + itemArray[1] + '/' + itemArray[2];
 
 		return requestItem;
+	},
+	
+	/**
+	 * stop all subscribed series
+	 */
+	stopseries: function () {
+		// TODO
+		$.noop;
 	}
 
 };

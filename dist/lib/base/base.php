@@ -154,8 +154,14 @@
 			months: <?php echo trans('month') ?>,
 			shortMonths: <?php echo trans('shortmonth') ?>,
 			weekdays: <?php echo trans('weekday') ?>,
+			shortWeekdays: <?php echo trans('shortday') ?>,
 			resetZoom: '<?php echo trans('plot', 'resetzoom') ?>',
-			resetZoomTitle: '<?php echo trans('plot', 'resetzoomtip') ?>'
+			resetZoomTitle: '<?php echo trans('plot', 'resetzoomtip') ?>',
+			rangeSelectorFrom: '<?php echo trans('plot', 'rangeSelectorFrom') ?>',
+			rangeSelectorTo: '<?php echo trans('plot', 'rangeSelectorTo') ?>',
+			rangeSelectorZoom: '<?php echo trans('plot', 'rangeSelectorZoom') ?>',
+			durations: <?php echo trans('durations', '', 'obj') ?>, // custom implementation in plots
+			shortDurations: <?php echo trans('shortdurations', '', 'obj') ?> // custom implementation in plots
 		},
 		plotOptions: {
 			series: {
@@ -165,7 +171,10 @@
 			}
 		},
 		chart: {
-			animation: <?php echo (config_animation ? 'true' : 'false') ?>
+			animation: <?php echo (config_animation ? 'true' : 'false') ?>,
+		},
+		rangeSelector: {
+			inputDateFormat: '<?php echo preg_replace('/%i/','%M',preg_replace('/[a-zA-Z]/','%$0',trans('format','short'))) ?>'
 		},
 		global: {
 			useUTC: false,
@@ -192,6 +201,19 @@
  */
 	var sv = {
 		config: {
-			version: <?php echo config_version ?>
+			version: '<?php echo config_version_full ?>',
+			icon0: '<?php echo config_design_icon0 ?>',
+			icon1: '<?php echo config_design_icon1 ?>',
+			svHostname: '<?php echo config_sv_hostname ?>',
+			driver: {
+				name: '<?php echo config_driver ?>',
+<?php
+				foreach ($GLOBALS['config'] as $key => $value) {
+					if (strpos($key, 'driver_') === 0) {
+						echo substr($key, 7) . ": '$value',\r\n";
+					}
+				}
+?>
+			}
 		}
 	};

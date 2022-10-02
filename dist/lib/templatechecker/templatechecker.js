@@ -70,10 +70,12 @@ var tplchk_status = (function () {
 	var btn_run;
 	var btn_reset;
 	var select_pages;
+	var btn_subfolder;
 
 	init = function () {
 		btn_run = $('#tplchk_btn_run').click(tplchk_checker.checkAll).closest('div');
 		btn_reset = $('#tplchk_btn_reset').click(tplchk_filelist.fill).closest('div');
+		btn_subfolder = $('#tplchk_chk_subfolders').on('change', tplchk_filelist.fill).closest('div');
 		select_pages = $('#tplchk_pages').on('change', tplchk_filelist.fill).closest('.ui-field-contain');
 		setWorking();
 	}
@@ -120,13 +122,52 @@ var tplchk_filelist = (function () {
 	};
 
 	fill = function (e) {
+		//Show Checkbox for checking items	
+		$('.check').each(function (index) {
+			$('.check').eq(index).children('img').attr('src', 'pages/base/pics/trans.png');
+			//$('.check').eq(index).children('span').html(data.text);
+			if ($('.check').eq(index)[0].dataset.check == "check_masteritem.php")
+			{
+				if ($('.check').eq(index)[0].children[0].attributes.src.nodeValue.includes('ok'))
+				{
+				  $("#chk_items")[0].style.visibility = "visible";
+				} else
+				{
+				  $("#chk_items")[0].style.visibility = "hidden";
+				}
+			}
+		});
 		tplchk_status.setWorking();
+		$('#check_masteritem').each(function (index) {
+		//Show Checkbox for checking items	
+		$.getJSON('lib/base/' + $(this).attr('data-check'),{'pages' : $('#tplchk_pages').val()}, function (data) {
+				$('#check_masteritem').eq(index).children('img').attr('src', sv.config.icon0 + data.icon);
+				$('#check_masteritem').eq(index).children('span').html(data.text);
+				
+				if ($('#check_masteritem').eq(index)[0].dataset.check == "check_masteritem.php")
+				{
+					if ($('#check_masteritem').eq(index)[0].children[0].attributes.src.nodeValue.includes('ok'))
+					{
+					  $("#chk_items")[0].style.visibility = "visible";
+					} else
+					{
+					  $("#chk_items")[0].style.visibility = "hidden";
+					}
+				}
+			})
+				.fail(function (jqXHR) {
+					var data = jQuery.parseJSON(jqXHR.responseText);
+					$('#check_masteritem').eq(index).children('img').attr('src', sv.config.icon0 + data.icon);
+					$('#check_masteritem').eq(index).children('span').html(data.text);
+				});
+		});
 		var pages = $('#tplchk_pages').val();
+		var subfolders = !$('#tplchk_chk_subfolders')[0].checked
 		fileList.slideUp('slow', function () {
 			$.ajax({
 				type: "GET",
 				url: 'lib/templatechecker/templatechecker.php',
-				data: {"cmd": "getfiles", "pages": pages},
+				data: {"cmd": "getfiles", "pages": pages, "subfolders": subfolders},
 				dataType: 'json',
 				success: fillSuccess,
 				error: fillError,
@@ -176,20 +217,32 @@ var tplchk_checker = (function () {
 
 	checkAll = function (e) {
 		e.preventDefault();
-
+		//Should items be checked
+		
 		$('.check').each(function (index) {
-	
-			$.getJSON('lib/base/' + $(this).attr('data-check'), function (data) {
-				$('.check').eq(index).children('img').attr('src', 'icons/ws/' + data.icon);
+		
+		$.getJSON('lib/base/' + $(this).attr('data-check'),{'pages' : $('#tplchk_pages').val()}, function (data) {
+				$('.check').eq(index).children('img').attr('src', sv.config.icon0 + data.icon);
 				$('.check').eq(index).children('span').html(data.text);
+				//Show Checkbox for checking items
+				if ($('.check').eq(index)[0].dataset.check == "check_masteritem.php")
+				{
+					if ($('.check').eq(index)[0].children[0].attributes.src.nodeValue.includes('ok'))
+					{
+					  $("#chk_items")[0].style.visibility = "visible";
+					} else
+					{
+					  $("#chk_items")[0].style.visibility = "hidden";
+					}
+				}
 			})
-				.error(function (jqXHR) {
+				.fail(function (jqXHR) {
 					var data = jQuery.parseJSON(jqXHR.responseText);
-					$('.check').eq(index).children('img').attr('src', 'icons/ws/' + data.icon);
+					$('.check').eq(index).children('img').attr('src', sv.config.icon0 + data.icon);
 					$('.check').eq(index).children('span').html(data.text);
 				});
 		});
-
+		
 		fileList.fadeOut('fast', function () {
 			tplchk_status.setWorking();
 			var deferreds = [];
@@ -201,10 +254,11 @@ var tplchk_checker = (function () {
 	};
 
 	check = function (fileObject) {
+		var check_items = !$('#tplchk_chk_items')[0].checked
 		return $.ajax({
 			type: 'GET',
 			url: 'lib/templatechecker/templatechecker.php',
-			data: {'cmd': 'analyze', 'file': fileObject.attr('data-file'), 'fileid': fileObject.attr('id')},
+			data: {'cmd': 'analyze', 'file': fileObject.attr('data-file'), 'fileid': fileObject.attr('id'), "checkItems":check_items},
 			dataType: 'json',
 			success: checkSuccess,
 			error: function (xhr, textStatus, errorThrown) {
@@ -340,11 +394,9 @@ var tplchk_checker = (function () {
 	return {init: init, checkAll: checkAll};
 })();
 
-$(document).on('pagecreate', function (event, ui) {
-	if(event.target.id == 'templatechecker') {
-		tplchk_status.init();
-		tplchk_displayMode.init();
-		tplchk_filelist.init();
-		tplchk_checker.init();
-	}
+$(document).on('pagecreate', '[id$="templatechecker"]', function (event, ui) {
+	tplchk_status.init();
+	tplchk_displayMode.init();
+	tplchk_filelist.init();
+	tplchk_checker.init();
 });

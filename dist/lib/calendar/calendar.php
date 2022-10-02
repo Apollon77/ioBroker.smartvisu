@@ -38,8 +38,10 @@ class calendar extends service
 	{
 		parent::init($request);
 
-		$this->count = $request['count'];
-		$this->calendar_names = preg_split('/[\s,]+/m', strtolower($request['calendar']));
+		if(isset($request['count']))
+			$this->count = $request['count'];
+		if(isset($request['calendar']))
+			$this->calendar_names = preg_split('/,\s/m', strtolower($request['calendar']));
 		$this->url = config_calendar_url;
 	}
 
@@ -63,12 +65,14 @@ class calendar extends service
 
 	protected function addFromIcs($ical, $calmetadata = array())
 	{
-		$events = $ical->eventsFromRange();
-		// output events as list
+		$events = $ical->eventsFromRange(false, '+1 year');
+		// output events as listj
 		foreach ($events as $event) {
+			if (!isset($calmetadata['calendardesc'])) $calmetadata['calendardesc'] = "";
+			if (!isset($calmetadata['calendarcolor'])) $calmetadata['calendarcolor'] = "";
 			$this->addData(array(
-				'start' => $ical->iCalDateToUnixTimestamp($event->dtstart),
-				'end' => $ical->iCalDateToUnixTimestamp($event->dtend),
+				'start' => $ical->iCalDateToUnixTimestamp($event->dtstart, true),
+				'end' => $event->dtend != null ? $ical->iCalDateToUnixTimestamp($event->dtend, true) : $ical->iCalDateToUnixTimestamp($event->dtstart, true),
 				'title' => $event->summary,
 				'content' => str_replace("\\n", "\n", $event->description),
 				'where' => $event->location,

@@ -71,7 +71,7 @@ class Widget {
 	 * @return mixed, NULL if no parameter with give index is available
 	 */
 	public function getParam($index) {
-		return $this->paramCount >= $index ? $this->paramArray[$index] : NULL;
+		return ($this->paramCount >= $index && isset($this->paramArray[$index]))? $this->paramArray[$index] : NULL;
 	}
 
 	/**
@@ -141,6 +141,8 @@ class Widget {
 	private static function splitParameters($paramString, $name, $node, $macro, $messages) {
 		$inSingleQuotes = FALSE;
 		$squareBracketLevel = 0;
+		$roundBracketLevel = 0;
+		$curlyBracketLevel = 0;
 		$paramArray = array();
 		$currentParam = '';
 		$lastChar = '';
@@ -154,11 +156,24 @@ class Widget {
 				$isArray = true;
 			} else if ($char == ']' && !$inSingleQuotes) {
 				$squareBracketLevel--;
-			} else if ($char == ',' && !$inSingleQuotes && $squareBracketLevel == 0) {
-				if($isArray)
+			} else if ($char == '(' && !$inSingleQuotes) {
+				$roundBracketLevel++;
+				$currentParam .= $char;
+			} else if ($char == ')' && !$inSingleQuotes) {
+				$roundBracketLevel--;
+				$currentParam .= $char;
+			} else if ($char == '{' && !$inSingleQuotes) {
+				$curlyBracketLevel++;
+				$currentParam .= $char;
+			} else if ($char == '}' && !$inSingleQuotes) {
+				$curlyBracketLevel--;
+				$currentParam .= $char;
+			} else if ($char == ',' && !$inSingleQuotes && $squareBracketLevel == 0 && $roundBracketLevel == 0 && $curlyBracketLevel==0) {
+				if($isArray && $squareBracketLevel == 0 && $curlyBracketLevel == 0)
 					$currentParam = self::splitParameters($currentParam, $name, $node, $macro, $messages);
 				else
 					$currentParam = trim($currentParam, " \t\n\r\0\x0B'");
+				//TODO: Recursively check widgets in parameters
 				$paramArray[] = $currentParam;
 				$currentParam = '';
 				$isArray = false;
@@ -168,7 +183,7 @@ class Widget {
 			$lastChar = $char;
 		}
 		if ($currentParam) {
-			if($isArray)
+			if($isArray && $curlyBracketLevel == 0)
 				$currentParam = self::splitParameters($currentParam, $name, $node, $macro, $messages);
 			else
 				$currentParam = trim($currentParam, " \t\n\r\0\x0B'");
@@ -189,9 +204,16 @@ class Widget {
 				$data['Parameter ' . $i++] = $param;
 			$messages->addWarning('WIDGET PARAM SPLIT', 'Square Brackets not matching!', $node->getLineNo(), $macro, $data);
 		}
+		if ($curlyBracketLevel != 0) {
+			$data = array('Widget' => $name, 'Parameters' => $paramString);
+			$i=0;
+			foreach($paramArray as $param) 
+				$data['Parameter ' . $i++] = $param;
+			$messages->addWarning('WIDGET PARAM SPLIT', 'Curly Brackets not matching!', $node->getLineNo(), $macro, $data);
+		}
 		return $paramArray;
 	}
-
+	
 	/**
 	 * constructor
 	 * @param \DOMElement $node node containing the widget

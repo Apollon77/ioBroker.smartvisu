@@ -1,14 +1,19 @@
 /**
  * -----------------------------------------------------------------------------
  * @package     smartVISU
- * @author      Martin Gleiß
+ * @author      Martin Gleiss
  * @copyright   2012 - 2015
  * @license     GPL [http://www.gnu.de]
  * -----------------------------------------------------------------------------
  * @hide        driver_address
  * @hide        driver_port
- * @hide        driver_realtime
+ * @hide        driver_tlsport
  * @hide        driver_autoreconnect
+ * @hide		reverseproxy
+ * @hide		driver_ssl
+ * @hide		driver_username
+ * @hide		driver_password
+ * @hide		sv_hostname
  */
 
 
@@ -18,12 +23,16 @@
  */
 var io = {
 
-	// the adress
-	adress: '',
+	// the address
+	address: '',
 
-	// the port
+	// the ports
 	port: '',
-
+	tlsport: '',
+	
+	// the pages used for offline_*.var filename
+	pages: '',
+	
 	uzsu_type: '0',
 
 	// -----------------------------------------------------------------------------
@@ -62,13 +71,23 @@ var io = {
 	/**
 	 * Initializion of the driver
 	 *
-	 * @param      the ip or url to the system (optional)
-	 * @param      the port on which the connection should be made (optional)
+	 * Driver config parameters are globally available as from v3.2
 	 */
-	init: function (address, port) {
-		io.address = address;
-		io.port = port;
+	init: function () {
+		io.address = '';
+		io.port = '';
+		io.tlsport = '';
 		io.stop();
+		var pagesIndex = location.search.indexOf('pages');
+		var ampersIndex = location.search.indexOf('&');
+		if (pagesIndex > 0){
+			io.pages = (ampersIndex > pagesIndex ? location.search.substring(pagesIndex + 6, ampersIndex) : location.search.substring(pagesIndex + 6)) ;	
+		}
+		// the easy method does not work with older tablets	(e.g. Safari iOS < v10.3)
+		//var params = new URLSearchParams(location.search.substring(1));
+		//if (params.has("pages"))
+		//io.pages = params.get("pages"); 
+		console.log('[io.offline]: driver started'+(io.pages != '' ? ' with file "./temp/offline_'+io.pages+'.var"' :''));
 	},
 
 	/**
@@ -103,7 +122,7 @@ var io = {
 	 */
 	loop: function () {
 		if (widget.listeners().length) {
-			io.timer = setTimeout('io.loop(); io.all();', 1000);
+			io.timer = setTimeout('io.loop(); io.all();', 5000);
 		}
 	},
 
@@ -130,7 +149,7 @@ var io = {
 	 */
 	get: function (item) {
 		$.ajax({  url: "driver/io_offline.php",
-			data: {"item": item},
+			data: {"pages": io.pages, "item": item},
 			type: "GET",
 			dataType: 'json',
 			async: true,
@@ -156,7 +175,7 @@ var io = {
 
 		io.stop();
 		$.ajax({  url: "driver/io_offline.php",
-			data: {"item": item, "val": JSON.stringify(val)},
+			data: {"pages": io.pages, "item": item, "val": JSON.stringify(val)},
 			type: 'POST',
 			dataType: 'json',
 			cache: false
@@ -172,15 +191,13 @@ var io = {
 	},
 
 	/**
-	 * Reads all values from bus and refreshes the pages
+	 * Reads limited range of items in order to avoid php request overflow
 	 */
-	all: function () {
-		var items = widget.listeners().join(',');
-
+	 getSlice: function(items) {
 		// only if anyone listens
 		if (items.length) {
 			$.ajax({  url: 'driver/io_offline.php',
-				data: {"item": items},
+				data: {"pages": io.pages, "item": items},
 				type: 'GET',
 				dataType: 'json',
 				async: true,
@@ -199,6 +216,19 @@ var io = {
 			})
 			.fail(notify.json)
 		}
+	},
+
+	/**
+	 * Reads all values from bus and refreshes the pages
+	 */
+	all: function() {
+		var allItems = widget.listeners();
+		var items;
+		
+		do {
+			items = allItems.splice(0,100).join(',');
+			io.getSlice(items);
+		} while (allItems.length > 0); 
 
 		// plots
 		var repeatSeries = function(item, tmin, tmax, ymin, ymax, cnt, step, startval) {
@@ -207,12 +237,13 @@ var io = {
 
 			if(step == null)
 				step = Math.round((new Date().duration(tmin) - new Date().duration(tmax)) / cnt);
-			var nextTime = (new Date().duration(tmax).getTime() - step)/1000;
+			var nextTime = -(new Date().duration(tmax).getTime() - step)/1000;
 			var startval = series[series.length-1][1];
 
 			setTimeout(function(){
-				repeatSeries(item, tmax, nextTime+"s", ymin, ymax, 1, step, startval);
-			}, 5000);
+				//repeatSeries(item, tmax, nextTime+"s", ymin, ymax, 1, step, startval);
+				repeatSeries(item, tmax, tmax, ymin, ymax, 1, step, startval);
+			}, step);
 		}
 
 		widget.plot().each(function (idx) {
@@ -260,14 +291,23 @@ var io = {
 			max = 1;
 		}
 
-		tmin = new Date().getTime() - new Date().duration(tmin);
-		tmax = new Date().getTime() - new Date().duration(tmax);
-		var step = Math.round((tmax - tmin) / cnt);
+		//tmin = new Date().getTime() - new Date().duration(tmin);
+		//tmax = new Date().getTime() - new Date().duration(tmax);
+		
+		//synchronize timestamps for demoseries to the minute in order to allow stacked plots
+		var actualTime = new Date()
+		var actualMinute = Math.round(actualTime/60000) * 60000; 
+		tmin = new Date (actualMinute) - new Date().duration(tmin);
+		tmax = new Date (actualMinute) - new Date().duration(tmax);
+		
+		var step = Math.round((tmax - tmin) / (cnt-1));
+		if(step == 0)
+			step = 1;
 
 		if(min == 0 && max == 1) { // boolean plot
 			if(val === undefined)
 				val = 0;
-			while (tmin < tmax) {
+			while (tmin <= tmax) {
 				val = (Math.random() < (0.2 + 0.6 * val)) ? 1 : 0; // make changes lazy
 				ret.push([tmin, val]);
 				tmin += step;
@@ -278,7 +318,7 @@ var io = {
 			if(val === undefined)
 				val = (min * 1) + ((max - min) / 2);
 
-			while (tmin < tmax) {
+			while (tmin <= tmax) {
 				val += Math.random() * (2 * delta) - delta;
 				ret.push([tmin, val.toFixed(2) * 1.0]);
 				tmin += step;
@@ -309,6 +349,13 @@ var io = {
 		}
 
 		return ret;
+	},
+	
+	/**
+	 * stop all subscribed series
+	 */
+	stopseries: function () {
+		$.noop;		
 	}
 
 };

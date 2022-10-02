@@ -7,7 +7,6 @@
 * -----------------------------------------------------------------------------
 */
 
-
 /**
 * The diagram showing curves of relative humidity and effective temperature superimposed upon rectangular coordinates. The comfort-zones indicate when humans feel good.
 *
@@ -36,14 +35,36 @@
 * @param {text(solid-half,solid-cshape,solid-circle,speedometer,scale,vumeter)=solid-half} set mode 'solid-half', 'solid-cshape', 'solid-circle', 'speedometer', 'scale', 'vumeter' (optional, default: 'solid-half')
 * @param {value[?]=} stop(s) for the sections in percent e.g. 50. More sections in array form: [30,60] (optional)
 * @param {color[?]=} color(s) for the sections e.g. '#f00' for red. More sections in array form: ['#f00','#fff'] (optional)
+* @param {text=}  actually unused (puts additional label inside speedometer )
 *
 * @author ramann, Stefan Widmer
 */
-{% macro gauge(id, item, min, max, unit, label, mode, stop, color) %}
+{% macro gauge(id, item, min, max, unit, label, mode, stop, color, axis) %}
 
 	<div{% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="plot.gauge" data-mode="{{ mode|default('solid-half') }}" data-item="{{ implode(item) }}"
-		data-label="{{ label }}" data-stop="{{ implode(stop) }}" data-color="{{ implode(color) }}" data-min="{{ min|default(0) }}" data-max="{{ max|default(255) }}" data-unit="{{ unit }}"  data-axis="{{ lang('plot.gauge', unit) }}"
+		data-label="{{ label }}" data-stop="{{ implode(stop) }}" data-color="{{ implode(color) }}" data-min="{{ min|default(0) }}" data-max="{{ max|default(255) }}" data-unit="{{ unit }}"  data-axis="{{ implode(axis) }}"
 		class="gauge"></div>
+
+{% endmacro %}
+
+
+/**
+* Displays a heating curve (outside temperature compared to heating flow temperature) with current datapoint
+*
+* @param {id=} unique id for this widget (optional)
+* @param {item(str)} an item containing the pairs of temperatures
+*        Sorted array in format: [[outside1, heating_temp], [outside2, heating_temp] ...]
+* @param {item(num)} an item for the current outside temperature
+* @param {item(num)} an item for the current heating flow temperature
+* @param {text[?]=} object with additional options for Highcharts, see https://api.highcharts.com/ (optional)
+*/
+{% macro heatingcurve(id, item_datapoints, item_current_outsidetemp, item_current_flowtemp, chartoptions) %}
+
+    <div {% if not id is empty %} id="{{ uid(page, id) }}"{% endif %}
+        data-widget="plot.heatingcurve"
+        data-item="{{ item_datapoints }}, {{ item_current_outsidetemp }}, {{ item_current_flowtemp }}"
+        data-chart-options="{{ chartoptions|json_encode()|escape('html_attr') }}">
+    </div>
 
 {% endmacro %}
 
@@ -52,52 +73,94 @@
 * Plots a chart of time series data
 *
 * @param {id=} unique id for this widget (optional)
-* @param {unchecked[?]} series of item(s); multiple items in array form: [ item1 , item2 ]
-* @param {text(avg,sum,min,max,minmax,minmaxavg)} the mode: 'avg', 'sum', 'min', 'max', 'minmax' or 'minmaxavg'
-* @param {duration=1h} the minimum time (x-axis): '1h', '2h'... (duration-format)
-* @param {duration=now} the maximum time (x-axis): '', '1h', '2h'... (duration-format, default: now)
+* @param {item[?](bool,num,list)} series of item(s); multiple items in array form: [ item1 , item2 ]
+* @param {text[?](avg,sum,min,max,minmax,minmaxavg,raw,on)=avg} the aggregation mode (optional, default 'avg')
+	May be a single mode or an array with separate mode per item.
+	Available modes depend on backend, common ones are 'avg', 'sum', 'min', 'max', 'minmax', 'minmaxavg', 'on', 'raw'. See backend's documentation for further information.
+* @param {duration=1h} the minimum time (x-axis): '1h', '2h'... (duration-format) Value is enterpreted as timestamp if no unit is given (e.g. 1629109298731). 
+* @param {duration=now} the maximum time (x-axis): '', '1h', '2h'... (duration-format, default: now). Value is enterpreted as timestamp if no unit is given (e.g. 1629109298731).
 * @param {text[?]=} the minimum for each y-axis; multiples in array form: [ min_y-axis1, min_y-axis2, ...] (optional)
-	if the axis type is boolean the passed value will be the label of the low state (e.g. 'Off')
+	If the axis type is boolean the passed value will be the label of the low state (e.g. 'Off')
 * @param {text[?]=} the maximum for each y-axis; multiples in array form: [ max_y-axis1, max_y-axis2, ...] (optional)
-	if the axis type is boolean the passed value will be the label of the high state (e.g. 'On')
-* @param {value=100} the number of points in the period (optional)
-* @param {text[?]=} label for each serie; multiples in array form (optional)
-* @param {color[?]=} color for each serie; multiples in array form (optional, default: suitable for design)
-* @param {text[?](line,stair,spline,area,areaspline,column)=line} type of each serie: 'line', 'stair', 'spline', 'area', 'areaspline', 'column'; multiples in array form (optional, default 'line')
+	If the axis type is boolean the passed value will be the label of the high state (e.g. 'On')
+* @param {value[?]=100} the number of datapoints in the series (optional, default 100)
+	May be a single value or an array of separate counts per item.
+* @param {text[?]=} label for each series; multiples in array form (optional)
+* @param {color[?]=} color for each series; multiples in array form (optional, default: suitable for design)
+* @param {text[?](line,linestack,stair,spline,area,areastair,areaspline,areastack,column,columnstack)=line} type of each serie: 'line', 'linestack', 'stair', 'spline', 'area', 'areastair', 'areaspline', 'areastacked','column', 'columnstacked'; multiples in array form (optional, default 'line')
 * @param {text[?]=} title for the x-axis and y-axes in array form: [title_x-axis, title_y-axis1, title_y-axis2, ...] (optional)
-* @param {duration=} minimal time range while zooming (optional, duration-format)
+* @param {duration(advanced,day)=} minimal time range while zooming or 'advanced' or 'day' (optional, duration-format)
+	By passing 'advanced' a seaparate range selector is shown and data grouping for large amount of data is enabled
+	By passing 'day', the plot is shown from 0:00 until 24:00 on the current day (it makes sense to set tmin to '24h' and tmax to 'now').
 * @param {value[]=} assignment of the series to the y-axes; multiples in array form (optional)
 * @param {value[]=} y-axes setup for left '0' and right '1' hand in array form (optional)
 * @param {color[?]=} y-axes color; multiples in array form (optional)
 * @param {text[?](linear,logarithmic,boolean)=linear} y-axes type, one of 'linear', 'logarithmic' or 'boolean'; multiples in array form (optional, default 'linear')
-* @param {format=} either a unit of the language file, an individual format string (PHP sprintf like) or a simple string as suffix. (optional)
+* @param {format[?]=} either a unit of the language file, an individual format string (PHP sprintf like) or a simple string as suffix. (optional)
+* @param {text[?]=} object with additional options for Highcharts, see https://api.highcharts.com/ (optional)
+* @param {text[?](normal,percent)=normal} stacking of series for each stack (array for multiple stacks in ascending order): 'normal', 'percent' (optional, default=normal). 
+* @param {text[]=} assign stacked series to different stacks: '0', '1, '2'... or ''. Sequence must be same as item sequence (optional, default='')
+* @param {value=0} control for the export of plot data: 0 = none, 1 = images, 2 = images and data (e.g.csv) (optional)
+* @param {text(database,item)=database} source of the data. If set to 'item', data must be provided in a list item (optional, default=database)  
 *
 * @see misc/fundamentals#Array-Form
 * @see misc/fundamentals#Duration-Format
 */
 
-{% macro period(id, item, mode, tmin, tmax, ymin, ymax, count, label, color, exposure, axis, zoom, assign, opposite, ycolor, ytype, unit) %}
+{% macro period(id, item, mode, tmin, tmax, ymin, ymax, count, label, color, exposure, axis, zoom, assign, opposite, ycolor, ytype, unit, chartoptions, stacking, stacks, export, source) %}
+	{% if (not export is empty) and export > 0 %}
+		<script src="vendor/plot.highcharts/modules/exporting.js"></script>
+		{% if export == 2 %}
+			<script src="vendor/plot.highcharts/modules/export-data.js"></script>
+		{% endif %}
+	{% endif %}
+	{% set source = source|default('database') %}
 	{% set tmax = (tmax|lower=='0h' or tmax==0 or tmax is empty) ? 'now' : tmax %}
 	{% set tmin = tmin|default('1h') %}
-	{% set count = count|default(100) %}
-	<div{% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="plot.period" data-mode="{{ mode|default('avg') }}"
-		{% if mode == 'minmax' %}
-			data-item="{{ implode(item, ['min', tmin, tmax, count]) }}, {{ implode(item, ['max', tmin, tmax, count]) }}"
-		{% elseif mode == 'minmaxavg' %}
-			data-item="{{ implode(item, ['min', tmin, tmax, count]) }}, {{ implode(item, ['max', tmin, tmax, count]) }}, {{ implode(item, ['avg', tmin, tmax, count]) }}"
+
+	{% set mode = (mode is iterable ? mode : [mode|default('avg')]) %}
+	{% set count = (count is iterable ? count : [count|default(100)]) %}
+	{% set stacking = (stacking is iterable ? stacking : [stacking|default('normal')]) %}
+	{% set stacks = (stacks is iterable ? stacks : [stacks|default('0')]) %}
+	{% set item = (item is iterable ? item : [item]) %}
+	{% set seriesitems = [] %}
+	{% for itemi in item %}
+		{% if mode|length < loop.index %}
+			{% set mode = mode|merge([mode|last]) %}
+		{% endif %}
+		{% set modei = mode[loop.index0] %}
+
+		{% if count|length < loop.index %}
+			{% set count = count|merge([count|last]) %}
+		{% endif %}
+		{% set counti = count[loop.index0] %}
+
+		{% if source == 'database' %}
+			{% if modei == 'minmax' %}
+				{% set seriesitems = seriesitems|merge([ implode(itemi, ['min', tmin, tmax, counti]), implode(itemi, ['max', tmin, tmax, counti]) ]) %}
+			{% elseif modei == 'minmaxavg' %}
+				{% set seriesitems = seriesitems|merge([ implode(itemi, ['min', tmin, tmax, counti]), implode(itemi, ['max', tmin, tmax, counti]), implode(itemi, ['avg', tmin, tmax, counti]) ]) %}
+			{% else %}
+				{% set seriesitems = seriesitems|merge([implode(itemi, [modei, tmin, tmax, counti])]) %}
+			{% endif %}
 		{% else %}
-			data-item="{{ implode(item, [mode|default('avg'), tmin, tmax, count]) }}"
-    {% endif %}
+			{% set seriesitems = seriesitems|merge([itemi]) %}
+		{% endif %}
+	{% endfor %}
+
+	<div{% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="plot.period" data-mode="{{ implode(mode) }}"
+		data-item="{{ implode(seriesitems) }}"
 		{% if ymin is not empty %} data-ymin="{{ implode(ymin) }}" {% endif %} {% if ymax is not empty %} data-ymax="{{ implode(ymax) }}" {% endif %}
+		data-tmin="{{ tmin }}" data-tmax="{{ tmax }}"
 		data-label="{{ implode(label) }}" data-color="{{ implode(color) }}" data-exposure="{{ implode(exposure) }}" data-axis="{{ implode(axis) }}"
 		{% if zoom is not empty %} data-zoom="{{ zoom }}" {% endif %}
-		{% if count is not empty %} data-count="{{ count }}" {% endif %}
 		{% if assign is not empty %} data-assign="{{ implode(assign) }}" {% endif %}
 		{% if opposite is not empty %} data-opposite="{{ implode(opposite) }}" {% endif %}
 		{% if ycolor is not empty %} data-ycolor="{{ implode(ycolor) }}" {% endif %}
-		data-ytype="{{ implode(ytype) }}"
-    data-unit="{{ implode(unit) }}"
-		class="plot"></div>
+		{% if stacks is not empty %} data-stacks="{{ implode(stacks) }}" {% endif %}
+		data-ytype="{{ implode(ytype) }}" data-unit="{{ implode(unit) }}" data-stacking="{{ implode(stacking) }}" 
+		data-chart-options="{{ chartoptions|json_encode()|escape('html_attr') }}" data-exportmenu="{{ export|default(0) }}"
+		class="plot{% if zoom == 'advanced' %} plot-highstock{% endif %}"></div>
 
 {% endmacro %}
 
@@ -129,13 +192,26 @@
 * @param {id=} unique id for this widget (optional)
 * @param {item} series of an item for the actual-temperature
 * @param {item} series of an item for the set-temperature
-* @param {item} series of an item for the state of the actor. It is shown as percental value within the pie. (> 0 is considered as 'on')
+* @param {item=} series of an item for the state of the actor. This is shown as percental value within the pie. (optional)
 * @param {value=100} number of samples (points) (optional, default 100)
+* @param {duration=1d} the minimum time (x-axis) (duration-format, default: '1d')
+* @param {duration=now} the maximum time (x-axis) (duration-format, default: 'now')
+* @param {text=} maximum value (or type) of the item for the state of the actor (optional, default: guessed according to values)
+	Often used values are 1 for boolean items, 100 for percentages, 255 for 1-byte values.
+  Additionally you may pass 'on' to use backend's 'on' function (caution: not all backend databases do support this).
 */
-{% macro rtr(id, item_actual, item_set, item_state, count) %}
-
-	<div{% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="plot.rtr" data-item="{{ implode([item_actual, item_set, item_state], ['avg', '1d', 'now', count|default(100)]) }}"
-		data-step="50" data-label="{{ lang('plot.rtr', 'label') }}" data-axis="{{ lang('plot.rtr', 'axis') }}"
+{% macro rtr(id, item_actual, item_set, item_state, count, tmin, tmax, state_max) %}
+	{% set tmax = (tmax|lower=='0h' or tmax==0 or tmax is empty) ? 'now' : tmax %}
+	{% set tmin = tmin|default('1d') %}
+	{% set count = count|default(100) %}
+	{% set items = [ implode(item_actual, ['avg', tmin, tmax, count]), implode(item_set, ['avg', tmin, tmax, count]) ] %}
+	{% if item_state is not empty %}
+		{% set items = items|merge([implode([item_state], [state_max == 'on' ? 'on' : 'avg', tmin, tmax, state_max == 'on' ? 1 : count])]) %}
+	{% endif %}
+	<div{% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="plot.rtr"
+		data-item="{{ implode(items) }}"
+		data-tmin="{{ tmin }}" data-tmax="{{ tmax }}" data-state-max="{{ state_max == 'on' ? 1 : state_max }}"
+		data-label="{{ lang('plot.rtr', 'label') }}" data-axis="{{ lang('plot.rtr', 'axis') }}"
 		class="plot"></div>
 
 {% endmacro %}
@@ -163,64 +239,66 @@
 {% endmacro %}
 
 
-/******************************************************************************
- * D E P R E C A T E D  W I D G E T S
- ******************************************************************************/
-
 /**
-* A simple widget for plotting item min/max/avg chart
+* Plots a chart of x/y data
 *
-* @deprecated as of version 2.9, use 'plot.period' instead.
-* @replacement {{ plot.period(%1$s, %2$s, 'minmaxavg', %3$s, %4$s, %5$s, %6$s, %9$s, '', '', '', %8$s, '', '', '', '', %7$s) }}
-*
-* @param unique id for this widget
-* @param the item. Only one item supported.
-* @param the minimum time (x-axis): '1h', '2h'... (duration-format)
-* @param the maximum time (x-axis): '', '1h', '2h'... (duration-format, default: now)
-* @param the minimum y-axis (optional)
-* @param the maximum y-axis (optional)
-* @param a unit, tries to get the format for that unit from the language-file (optional)
-* @param title/s for the x-axis and y-axis (optional)
-* @param count number of data points to load, default 100
-*
-* @see misc/fundamentals#Duration-Format
-*/
-{% macro minmaxavg(id, item, tmin, tmax, ymin, ymax, unit, axis, count) %}
-	{% import _self as plot %}
-	{{ plot.period(id, item, 'minmaxavg', tmin, tmax, ymin, ymax, count, '', '', '', axis, '', '', '', '', unit) }}
-	<script type="text/javascript">console.warn("Use of 'plot.minmaxavg' is deprecated, use 'plot.period' instead.")</script>
-{% endmacro %}
-
-
-/**
-* A simple widget for plotting charts with multiple y-axis (based on macro period)
-*
-* @deprecated as of version 2.9, use 'plot.period' instead.
-* @replacement {{ plot.period(%1$s, %2$s, %3$s, %4$s, %5$s, %6$s, %7$s, %8$s, %9$s, %10$s, %11$s, %12$s, %13$s, %14$s, %15$s, %16$s) }}
-*
-* @param unique id for this widget (optional)
-* @param series of item/s. More item/s in array form: [ item1 , item2 ]
-* @param the mode: 'avg', 'sum', 'min', 'max'
-* @param the minimum time (x-axis): '1h', '2h'... (duration-format)
-* @param the maximum time (x-axis): '', '1h', '2h'... (duration-format, default: now)
-* @param the minimum for each y-axis (optional) use [ min_y-axis1, min_y-axis2, ...]
-* @param the maximum for each y-axis (optional) use [ max_y-axis1, max_y-axis2, ...]
-* @param the number of points in the period (optional)
-* @param label/s for each series (optional)
-* @param color/s for each series e. g. '#f00' for red (optional, default: sutiable for design)
-* @param exposure is type/s for each series: 'line', 'stair', 'spline', 'area', 'areaspline', 'column' (optional, default 'line')
-* @param title/s for the x-axis and y-axis (optional)
-* @param minimum time while zooming in sec (optional, duration-format)
-* @param assignment of the series to the axis (optional)
-* @param y-axis setup for left '0' and right '1' hand (optional)
-* @param y-axis color might be applied (optional)
+* @param {id=} unique id for this widget (optional)
+* @param {item[?](list)} item(s) contaning x/y data in list form; specify multiple items as array: [ item1 , item2 ]
+* @param {item[?](bool, num)} unused. Planned for a later version: item(s) contaning x data of working point(s)
+* @param {item[?](bool, num)} unused. Planned for a later version: item(s) contaning y data of working point(s)
+* @param {text=} the minimum x-axis value (optional) 
+* @param {text=} the maximum x-axis value (optional)
+* @param {text[?]=} the minimum for each y-axis; multiples in array form: [ min_y-axis1, min_y-axis2, ...] (optional)
+	If the axis type is boolean the passed value will be the label of the low state (e.g. 'Off')
+* @param {text[?]=} the maximum for each y-axis; multiples in array form: [ max_y-axis1, max_y-axis2, ...] (optional)
+	If the axis type is boolean the passed value will be the label of the high state (e.g. 'On')
+* @param {text[?]=} label for each series; multiples in array form (optional)
+* @param {text[?]=} unused. Planned for a later version: name(s) of the working point(s) 
+* @param {color[?]=} color for each series; multiples in array form (optional, default: suitable for design)
+* @param {text[?](line,linestack,stair,spline,area,areastair,areaspline,areastack,column,columnstack)=line} type of each serie: 'line', 'linestack', 'stair', 'spline', 'area', 'areastair', 'areaspline', 'areastacked','column', 'columnstacked'; multiples in array form (optional, default 'line')
+* @param {text[?]=} title for the x-axis and y-axes in array form: [title_x-axis, title_y-axis1, title_y-axis2, ...] (optional)
+* @param {text=} minimal x-range while zooming (optional)
+* @param {value[]=} assignment of the series to the y-axes; multiples in array form (optional)
+* @param {value[]=} y-axes setup for left '0' and right '1' hand in array form (optional)
+* @param {color[?]=} y-axes color; multiples in array form (optional)
+* @param {text[?](linear,logarithmic,boolean)=linear} y-axes type, one of 'linear', 'logarithmic' or 'boolean'; multiples in array form (optional, default 'linear')
+* @param {format[?]=} either a unit of the language file, an individual format string (PHP sprintf like) or a simple string as suffix. (optional)
+* @param {text[?]=} object with additional options for Highcharts, see https://api.highcharts.com/ (optional)
+* @param {text[?](normal,percent)=normal} stacking of series for each stack (array for multiple stacks in ascending order): 'normal', 'percent' (optional, default=normal). 
+* @param {text[]=} assign stacked series to different stacks: '0', '1, '2'... or ''. Sequence must be same as item sequence (optional, default='')
+* @param {value=0} control for the export of plot data: 0 = none, 1 = images, 2 = images and data (e.g.csv) (optional)
 *
 * @see misc/fundamentals#Array-Form
 * @see misc/fundamentals#Duration-Format
 */
 
-{% macro multiaxis( id, item, mode, tmin, tmax, ymin, ymax, count, label, color, exposure, axis, zoom, assign, opposite, ycolor) %}
-	{% import _self as plot %}
-	{{ plot.period(id, item, mode, tmin, tmax, ymin, ymax, count, label, color, exposure, axis, zoom, assign, opposite, ycolor) }}
-	<script type="text/javascript">console.warn("Use of 'plot.multiaxis' is deprecated, use 'plot.period' instead.")</script>
+{% macro xyplot(id, item, xitem, yitem, xmin, xmax, ymin, ymax, label, xylabel, color, exposure, axis, zoom, assign, opposite, ycolor, ytype, unit, chartoptions, stacking, stacks, export) %}
+	{% if (not export is empty) and export > 0 %}
+		<script src="vendor/plot.highcharts/modules/exporting.js"></script>
+		{% if export == 2 %}
+			<script src="vendor/plot.highcharts/modules/export-data.js"></script>
+		{% endif %}
+	{% endif %}
+	{% set stacking = (stacking is iterable ? stacking : [stacking|default('normal')]) %}
+	{% set stacks = (stacks is iterable ? stacks : [stacks|default('0')]) %}
+
+	<div{% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="plot.xyplot" data-item="{{ implode(item) }}"
+		{% if ymin is not empty %} data-ymin="{{ implode(ymin) }}" {% endif %} {% if ymax is not empty %} data-ymax="{{ implode(ymax) }}" {% endif %}
+		data-xmin="{{ xmin }}" data-xmax="{{ xmax }}"
+		data-label="{{ implode(label) }}" data-color="{{ implode(color) }}" data-exposure="{{ implode(exposure) }}" data-axis="{{ implode(axis) }}"
+		{% if zoom is not empty %} data-zoom="{{ zoom }}" {% endif %}
+		{% if assign is not empty %} data-assign="{{ implode(assign) }}" {% endif %}
+		{% if opposite is not empty %} data-opposite="{{ implode(opposite) }}" {% endif %}
+		{% if ycolor is not empty %} data-ycolor="{{ implode(ycolor) }}" {% endif %}
+		{% if stacks is not empty %} data-stacks="{{ implode(stacks) }}" {% endif %}
+		data-ytype="{{ implode(ytype) }}" data-unit="{{ implode(unit) }}" data-stacking="{{ implode(stacking) }}" 
+		data-chart-options="{{ chartoptions|json_encode()|escape('html_attr') }}" data-exportmenu="{{ export|default(0) }}"
+		class="plot"></div>
+
 {% endmacro %}
+
+
+
+/******************************************************************************
+ * D E P R E C A T E D  W I D G E T S
+ ******************************************************************************/

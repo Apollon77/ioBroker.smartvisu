@@ -52,6 +52,7 @@ $GLOBALS['config'] = $config->get();
 foreach ($GLOBALS['config'] as $key => $value) {
 	define('config_' . $key, $value);
 }
+define ('config_version_full', config_version_major.".".config_version_minor.".".config_version_revision);
 
 /**
  * Set proxy according to config
@@ -75,5 +76,19 @@ if($GLOBALS['config']['proxy'] == true) {
  * Set timezone according to config
  */
 date_default_timezone_set(config_timezone);
+
+/**
+* Set Handling of PHP WARNINGS
+* TO DO: make a concept for integrating php error messages into SV notifications
+*/
+set_error_handler(
+	function($errno, $errstr, $errfile, $errline)
+	{
+		if (defined('config_debug') && config_debug == 1)				
+			return false;	// hand over to standard error reporting
+		else
+			return true;	// ignore warnings
+	}
+	,E_WARNING);
 
 ?>

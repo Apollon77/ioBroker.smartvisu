@@ -14,9 +14,16 @@
   line-height: normal;
   z-index: 0;
   /* #1072 */
-  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
   font-family: "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif;
   font-size: 12px;
+  user-select: none;
+  touch-action: manipulation;
+  outline: none;
+}
+
+.highcharts-root {
+  display: block;
 }
 
 .highcharts-root text {
@@ -29,6 +36,10 @@
 
 .highcharts-emphasized {
   font-style: italic;
+}
+
+.highcharts-anchor {
+  cursor: pointer;
 }
 
 .highcharts-background {
@@ -47,6 +58,18 @@
   fill: inherit;
 }
 
+.highcharts-tracker-line {
+  stroke-linejoin: round;
+  stroke: rgba(192, 192, 192, 0.0001);
+  stroke-width: 22;
+  fill: none;
+}
+
+.highcharts-tracker-area {
+  fill: rgba(192, 192, 192, 0.0001);
+  stroke-width: 0;
+}
+
 /* Titles */
 .highcharts-title {
   fill: #333333;
@@ -55,6 +78,7 @@
 
 .highcharts-subtitle {
   fill: #666666;
+  font-size: 1em;
 }
 
 /* Axes */
@@ -83,7 +107,7 @@
 }
 
 .highcharts-xaxis-grid .highcharts-grid-line {
-  stroke-width: 0;
+  stroke-width: 0px;
 }
 
 .highcharts-tick {
@@ -143,6 +167,15 @@
   fill-opacity: 0.85;
 }
 
+.highcharts-tooltip-box .highcharts-label-box {
+  fill: #f7f7f7;
+  fill-opacity: 0.85;
+}
+
+div.highcharts-tooltip {
+  filter: none;
+}
+
 .highcharts-selection-marker {
   fill: #335cad;
   fill-opacity: 0.25;
@@ -155,12 +188,30 @@
   stroke-linejoin: round;
 }
 
+.highcharts-empty-series {
+  stroke-width: 1px;
+  fill: none;
+  stroke: #cccccc;
+}
+
 .highcharts-state-hover .highcharts-graph {
   stroke-width: 3;
 }
 
+.highcharts-point-inactive {
+  opacity: 0.2;
+  transition: opacity 50ms;
+  /* quick in */
+}
+
+.highcharts-series-inactive {
+  opacity: 0.2;
+  transition: opacity 50ms;
+  /* quick in */
+}
+
 .highcharts-state-hover path {
-  transition: stroke-width 50;
+  transition: stroke-width 50ms;
   /* quick in */
 }
 
@@ -246,6 +297,11 @@ g.highcharts-series,
   stroke: #ffffff;
 }
 
+.highcharts-a11y-markers-hidden .highcharts-point:not(.highcharts-point-hover):not(.highcharts-a11y-marker-visible),
+.highcharts-a11y-marker-hidden {
+  opacity: 0;
+}
+
 .highcharts-point {
   stroke-width: 1px;
 }
@@ -264,7 +320,7 @@ g.highcharts-series,
   stroke-width: 0;
 }
 
-.highcharts-data-label text {
+.highcharts-data-label text, text.highcharts-data-label {
   fill: #333333;
 }
 
@@ -272,12 +328,17 @@ g.highcharts-series,
   fill: none;
 }
 
+.highcharts-data-label-hidden {
+  pointer-events: none;
+}
+
 .highcharts-halo {
   fill-opacity: 0.25;
   stroke-width: 0;
 }
 
-.highcharts-point-select {
+.highcharts-series:not(.highcharts-pie-series) .highcharts-point-select,
+.highcharts-markers .highcharts-point-select {
   fill: #cccccc;
   stroke: #000000;
 }
@@ -303,11 +364,6 @@ g.highcharts-series,
 .highcharts-pie-series .highcharts-point-hover {
   fill-opacity: 0.75;
   transition: fill-opacity 50ms;
-}
-
-.highcharts-pie-series .highcharts-point-select {
-  fill: inherit;
-  stroke: inherit;
 }
 
 .highcharts-funnel-series .highcharts-point {
@@ -372,15 +428,39 @@ g.highcharts-series,
   fill-opacity: 0.75;
 }
 
+.highcharts-vector-series .highcharts-point {
+  fill: none;
+  stroke-width: 2px;
+}
+
+.highcharts-windbarb-series .highcharts-point {
+  fill: none;
+  stroke-width: 2px;
+}
+
+.highcharts-lollipop-stem {
+  stroke: #000000;
+}
+
+.highcharts-focus-border {
+  fill: none;
+  stroke-width: 2px;
+}
+
+.highcharts-legend-item-hidden .highcharts-focus-border {
+  fill: none !important;
+}
+
 /* Legend */
 .highcharts-legend-box {
   fill: none;
   stroke-width: 0;
 }
 
-.highcharts-legend-item text {
+.highcharts-legend-item > text {
   fill: #333333;
   font-weight: bold;
+  font-size: 1em;
   cursor: pointer;
   stroke-width: 0;
 }
@@ -404,9 +484,28 @@ g.highcharts-series,
   fill: #cccccc;
 }
 
+circle.highcharts-legend-nav-active, circle.highcharts-legend-nav-inactive {
+  /* tracker */
+  fill: rgba(192, 192, 192, 0.0001);
+}
+
 .highcharts-legend-title-box {
   fill: none;
   stroke-width: 0;
+}
+
+/* Bubble legend */
+.highcharts-bubble-legend-symbol {
+  stroke-width: 2;
+  fill-opacity: 0.5;
+}
+
+.highcharts-bubble-legend-connectors {
+  stroke-width: 1;
+}
+
+.highcharts-bubble-legend-labels {
+  fill: #333333;
 }
 
 /* Loading */
@@ -444,7 +543,7 @@ g.highcharts-series,
   stroke-width: 1px;
 }
 
-/* Highcharts More */
+/* Highcharts More and modules */
 .highcharts-boxplot-box {
   fill: #ffffff;
 }
@@ -479,6 +578,31 @@ g.highcharts-series,
 .highcharts-waterfall-series .highcharts-graph {
   stroke: #333333;
   stroke-dasharray: 1, 3;
+}
+
+.highcharts-sankey-series .highcharts-point {
+  stroke-width: 0;
+}
+
+.highcharts-sankey-series .highcharts-link {
+  transition: fill 250ms, fill-opacity 250ms;
+  fill-opacity: 0.5;
+}
+
+.highcharts-sankey-series .highcharts-point-hover.highcharts-link {
+  transition: fill 50ms, fill-opacity 50ms;
+  fill-opacity: 1;
+}
+
+.highcharts-venn-series .highcharts-point {
+  fill-opacity: 0.75;
+  stroke: #cccccc;
+  transition: stroke 250ms, fill-opacity 250ms;
+}
+
+.highcharts-venn-series .highcharts-point-hover {
+  fill-opacity: 1;
+  stroke: #cccccc;
 }
 
 /* Highstock */
@@ -576,21 +700,30 @@ g.highcharts-series,
 .highcharts-button-hover {
   transition: fill 0ms;
   fill: #e6e6e6;
-  stroke: #333333;
+  stroke: #cccccc;
+}
+
+.highcharts-button-hover text {
+  fill: #333333;
 }
 
 .highcharts-button-pressed {
   font-weight: bold;
   fill: #e6ebf5;
-  stroke: #335cad;
+  stroke: #cccccc;
+}
+
+.highcharts-button-pressed text {
+  fill: #333333;
+  font-weight: bold;
 }
 
 .highcharts-button-disabled text {
-  fill: #cccccc;
+  fill: #333333;
 }
 
 .highcharts-range-selector-buttons .highcharts-button {
-  stroke-width: 0;
+  stroke-width: 0px;
 }
 
 .highcharts-range-label rect {
@@ -607,6 +740,11 @@ g.highcharts-series,
 
 .highcharts-range-input text {
   fill: #333333;
+}
+
+.highcharts-range-input {
+  stroke-width: 1px;
+  stroke: #cccccc;
 }
 
 input.highcharts-range-selector {
@@ -637,6 +775,21 @@ input.highcharts-range-selector {
 
 .highcharts-candlestick-series .highcharts-point-up {
   fill: #ffffff;
+}
+
+.highcharts-hollowcandlestick-series .highcharts-point-down {
+  fill: #f21313;
+  stroke: #f21313;
+}
+
+.highcharts-hollowcandlestick-series .highcharts-point-down-bearish-up {
+  fill: #06b535;
+  stroke: #06b535;
+}
+
+.highcharts-hollowcandlestick-series .highcharts-point-up {
+  fill: transparent;
+  stroke: #06b535;
 }
 
 .highcharts-ohlc-series .highcharts-point-hover {
@@ -746,7 +899,9 @@ input.highcharts-range-selector {
   cursor: pointer;
 }
 
-.highcharts-drilldown-data-label text, .highcharts-drilldown-axis-label {
+.highcharts-drilldown-data-label text,
+text.highcharts-drilldown-data-label,
+.highcharts-drilldown-axis-label {
   cursor: pointer;
   fill: #003399;
   font-weight: bold;
@@ -758,4 +913,101 @@ input.highcharts-range-selector {
   font-weight: bold;
   font-size: 12px;
   fill: #666666;
+}
+
+/* Drag-panes module */
+.highcharts-axis-resizer {
+  cursor: ns-resize;
+  stroke: black;
+  stroke-width: 2px;
+}
+
+/* Bullet type series */
+.highcharts-bullet-target {
+  stroke-width: 0;
+}
+
+/* Lineargauge type series */
+.highcharts-lineargauge-target {
+  stroke-width: 1px;
+  stroke: #333333;
+}
+
+.highcharts-lineargauge-target-line {
+  stroke-width: 1px;
+  stroke: #333333;
+}
+
+/* Annotations module */
+.highcharts-annotation-label-box {
+  stroke-width: 1px;
+  stroke: #000000;
+  fill: #000000;
+  fill-opacity: 0.75;
+}
+
+.highcharts-annotation-label text {
+  fill: #e6e6e6;
+}
+
+/* A11y module */
+.highcharts-a11y-proxy-button {
+  border-width: 0;
+  background-color: transparent;
+  cursor: pointer;
+  outline: none;
+  opacity: 0.001;
+  z-index: 999;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  display: block;
+  position: absolute;
+}
+
+.highcharts-a11y-proxy-group ul {
+  list-style: none;
+}
+
+.highcharts-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  clip: rect(1px, 1px, 1px, 1px);
+  margin-top: -3px;
+  opacity: 0.01;
+}
+
+.highcharts-a11y-invisible {
+  visibility: hidden;
+}
+
+.highcharts-a11y-proxy-container,
+.highcharts-a11y-proxy-container-before,
+.highcharts-a11y-proxy-container-after {
+  position: absolute;
+  white-space: nowrap;
+}
+
+g.highcharts-series, .highcharts-markers, .highcharts-point {
+  outline: none;
+}
+
+/* Gantt */
+.highcharts-treegrid-node-collapsed, .highcharts-treegrid-node-expanded {
+  cursor: pointer;
+}
+
+.highcharts-point-connecting-path {
+  fill: none;
+}
+
+.highcharts-grid-axis .highcharts-tick {
+  stroke-width: 1px;
+}
+
+.highcharts-grid-axis .highcharts-axis-line {
+  stroke-width: 1px;
 }

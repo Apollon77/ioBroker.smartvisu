@@ -1,12 +1,13 @@
 /*
- Highcharts JS v5.0.14 (2017-07-28)
+ Highcharts Gantt JS v9.3.1 (2021-11-05)
+
  StaticScale
 
- (c) 2016 Torstein Honsi, Lars A. V. Cabrera
-
- --- WORK IN PROGRESS ---
+ (c) 2016-2021 Torstein Honsi, Lars A. V. Cabrera
 
  License: www.highcharts.com/license
 */
-(function(a){"object"===typeof module&&module.exports?module.exports=a:a(Highcharts)})(function(a){(function(c){var a=c.Chart,e=c.each,f=c.pick;a.prototype.adjustHeight=function(){e(this.axes,function(b){var a=b.chart,e=!!a.initiatedScale&&a.options.animation,d=b.options.staticScale;c.isNumber(d)&&!b.horiz&&c.defined(b.min)&&(b=f(b.unitLength,b.max+b.tickInterval-b.min)*d,b=Math.max(b,d),d=b-a.plotHeight,1<=Math.abs(d)&&(a.plotHeight=b,a.setSize(null,a.chartHeight+d,e)))});this.initiatedScale=!0};
-c.addEvent(a.prototype,"render",a.prototype.adjustHeight)})(a)});
+'use strict';(function(a){"object"===typeof module&&module.exports?(a["default"]=a,module.exports=a):"function"===typeof define&&define.amd?define("highcharts/modules/static-scale",["highcharts"],function(b){a(b);a.Highcharts=b;return a}):a("undefined"!==typeof Highcharts?Highcharts:void 0)})(function(a){function b(a,e,c,b){a.hasOwnProperty(e)||(a[e]=b.apply(null,c))}a=a?a._modules:{};b(a,"Extensions/StaticScale.js",[a["Core/Axis/Axis.js"],a["Core/Chart/Chart.js"],a["Core/Utilities.js"]],function(a,
+b,c){var e=c.addEvent,f=c.defined,g=c.isNumber,h=c.pick;e(a,"afterSetOptions",function(){var a=this.chart.options.chart;!this.horiz&&g(this.options.staticScale)&&(!a.height||a.scrollablePlotArea&&a.scrollablePlotArea.minHeight)&&(this.staticScale=this.options.staticScale)});b.prototype.adjustHeight=function(){"adjustHeight"!==this.redrawTrigger&&((this.axes||[]).forEach(function(a){var d=a.chart,b=!!d.initiatedScale&&d.options.animation,c=a.options.staticScale;if(a.staticScale&&f(a.min)){var e=h(a.brokenAxis&&
+a.brokenAxis.unitLength,a.max+a.tickInterval-a.min)*c;e=Math.max(e,c);c=e-d.plotHeight;!d.scrollablePixelsY&&1<=Math.abs(c)&&(d.plotHeight=e,d.redrawTrigger="adjustHeight",d.setSize(void 0,d.chartHeight+c,b));a.series.forEach(function(a){(a=a.sharedClipKey&&d.sharedClips[a.sharedClipKey])&&a.attr(d.inverted?{width:d.plotHeight}:{height:d.plotHeight})})}}),this.initiatedScale=!0);this.redrawTrigger=null};e(b,"render",b.prototype.adjustHeight)});b(a,"masters/modules/static-scale.src.js",[],function(){})});
+//# sourceMappingURL=static-scale.js.map

@@ -1,8 +1,8 @@
 /**
  * -----------------------------------------------------------------------------
  * @package     smartVISU
- * @author      Martin Gleiß, Stefan Widmer
- * @copyright   2012 - 2017
+ * @author      Martin Gleiß, Stefan Widmer, Wolfram v. Hülsen
+ * @copyright   2012 - 2021
  * @license     GPL [http://www.gnu.de]
  * -----------------------------------------------------------------------------
  */
@@ -97,21 +97,42 @@ function printf(format, val) {
 /**
  * Activates check and reload for lost WebSocket connection
  */
-function activateAutoReconnect(address, port) {
+function activateAutoReconnect() {
 	if(io.socket) {
 		var autoReconnectIntervalId = window.setInterval(function () {
-			if(io.socket.readyState == 3) {
+			// console.log('checking if websocket is alive: state = '+ io.socket.readyState);
+			if(io.socket != null && io.socket.readyState == 3) {
 				console.log("WebSocket closed, reconnect...");
-				io.init(address, port);
+				io.init();
 			}
 		}, 5000);
-		
+
+		// clear interval removed after pr#353 to fix reconnect after frozen tab 		
 		window.onbeforeunload = function() {
-			window.clearInterval(autoReconnectIntervalId);
+		//console.log('event onbeforeunload');
+		window.clearInterval(autoReconnectIntervalId);
 		};
 	}
 }
 
+/**
+ * Displays a timestamp as time in H:i:s format
+ */
+function timedisplay (num) {
+	var ret='';
+	if (num <0){  
+		num = -num;
+		ret +='-'
+	};
+	var timestamp = new Date(num - num%1000);
+	var s = timestamp.getSeconds();
+	var i = timestamp.getMinutes();
+	var h = (timestamp - s*1000 - i*60000)/3600000;
+	ret +=(h<10?'0'+h : h)+':';
+	ret +=(i<10?'0'+i : i)+':';
+	ret +=(s<10?'0'+s : s);
+	return ret;
+};
 
 /**
  * -----------------------------------------------------------------------------
@@ -138,6 +159,19 @@ Number.prototype.limit = function (min, max, step) {
 	}
 
 	return ret;
+};
+
+/**
+ * Determine count of decimals of a number 
+ */
+Number.prototype.decimals = function (){
+	if (parseInt(this) == this)
+		return 0;
+	else {
+		var parts = Array();
+		parts = String(this).split('.');
+		return parts[1].length;
+	}
 };
 
 /**
@@ -317,9 +351,27 @@ String.prototype.md5 = function () {
 	var add32 = function (a, b) {
 		return (a + b) & 0xFFFFFFFF;
 	};
-	
+
 	return hex(md51(this));
 };
+
+/**
+ * Escapes html-specific characters to display in status messages and log from backend
+ */
+ 	var specialchars = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': '&quot;',
+    "'": '&#39;',
+    "/": '&#x2F;'
+  };
+  
+ String.prototype.htmlescape = function () {
+	 return this.replace(/[&<>"'\/]/g, function (s) {
+      return specialchars[s];
+    });
+ };
 
 
 /**
@@ -333,7 +385,7 @@ Date.prototype.duration = function (str) {
 		w: 604800000, /*    7 * d */
 		d: 86400000, /*   24 * h */
 		h: 3600000, /*   60 * i */
-		i: 60000, /*   60 * s */
+		i: 60000,  /*   60 * s */
 		s: 1000   /* 1 * 1000 */
 	};
 
@@ -380,9 +432,11 @@ Date.prototype.duration = function (str) {
 			}
 		}
 
-		// default is 's'
+		// interpret as timestamp if no duration format is given 
+		// changed in v3.2 from "default = 's' "
 		if (result == 0 && val > 0) {
-			result = val * toks['s'];
+			//result = val * toks['s'];
+			result = new Date() - val;
 		}
 	}
 
@@ -424,6 +478,69 @@ if(!Array.prototype.equals) {
 }
 
 /**
+ * Get values of an Object
+ * (Polyfill for IE and older browsers)
+ */
+if (!Object.values) {
+	Object.values = function(obj) {
+		var vals = [];
+		for (var key in obj) {
+			vals.push(obj[key]);
+		}
+		return vals;
+	};
+}
+
+/*
+ * Polyfill of padStart and padEnd for IE
+ */
+// https://github.com/uxitten/polyfill/blob/master/string.polyfill.js
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/padStart
+if (!String.prototype.padStart) {
+    String.prototype.padStart = function padStart(targetLength,padString) {
+        targetLength = targetLength>>0; //truncate if number or convert non-number to 0;
+        padString = String((typeof padString !== 'undefined' ? padString : ' '));
+        if (this.length > targetLength) {
+            return String(this);
+        }
+        else {
+            targetLength = targetLength-this.length;
+            if (targetLength > padString.length) {
+                padString += padString.repeat(targetLength/padString.length); //append to original to ensure we are longer than needed
+            }
+            return padString.slice(0,targetLength) + String(this);
+        }
+    };
+}
+// https://github.com/uxitten/polyfill/blob/master/string.polyfill.js
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/padEnd
+if (!String.prototype.padEnd) {
+    String.prototype.padEnd = function padEnd(targetLength,padString) {
+        targetLength = targetLength>>0; //floor if number or convert non-number to 0;
+        padString = String((typeof padString !== 'undefined' ? padString : ' '));
+        if (this.length > targetLength) {
+            return String(this);
+        }
+        else {
+            targetLength = targetLength-this.length;
+            if (targetLength > padString.length) {
+                padString += padString.repeat(targetLength/padString.length); //append to original to ensure we are longer than needed
+            }
+            return String(this) + padString.slice(0,targetLength);
+        }
+    };
+}
+
+/**
+ * Invert jQuery filtered list
+ * Source: https://stackoverflow.com/a/2798774
+ */
+$.fn.invert = function() {
+  return this.end().not(this);
+};
+
+
+/**
  * -----------------------------------------------------------------------------
  * C L A S S   E X T E N T I O N S
  * -----------------------------------------------------------------------------
@@ -434,12 +551,14 @@ if(!Array.prototype.equals) {
  */
 var fx = {
 
+
 	/**
 	 * Initialisation
 	 */
-	init: function () {
+	init3: function () {
+
 		var group = {};
-		$('img.icon1[src$=".svg"], img.do-fx[src$=".svg"], a.icon1 > img.icon[src$=".svg"]').each(function () {
+		$('img.icon1[src$=".svg"], a.icon1 > img.icon[src$=".svg"]').each(function () {
 			var img = $(this), src = img.attr('src');
 			//img.attr('src','').hide(); // prevent double loading (once by img html, once by $.get above)
 			if(group[src])
@@ -478,7 +597,7 @@ var fx = {
 
 					svg.attr('class', 'fx-' + img.attr('class'));
 
-					img.replaceWith(svg);
+					img.attr('src', 'data:image/svg+xml,'+encodeURI('<?xml-stylesheet href="pages/base/base.css" type="text/css"?>'+$('<div>').append(svg).html()));
 
 					// if the svg is loaded and replaced, we try to draw if it is a widget
 					var img_id = img.attr('id');
@@ -488,6 +607,189 @@ var fx = {
 				});
 			}, 'xml');
 		});
+	},
+
+	/**
+	 * Initialisation
+	 */
+	init3: function () {
+
+		var group = {};
+		var sprite = $('#svgsprite');
+		if(!sprite.length) {
+			sprite = $('<svg id="svgsprite" xmlns="http://www.w3.org/2000/svg"></svg>').prependTo('body');
+		}
+
+		$('.icon use').each(function () {
+			var img = $(this), src = img.attr('data-src');
+			var id = src.replace(/[^a-zA-Z0-9_\-]/g, '-');
+			//img.attr('src','').hide(); // prevent double loading (once by img html, once by $.get above)
+			if(!sprite.find('#id').length) {
+				if(group[src])
+					group[src] = group[src].add(img);
+				else
+					group[src] = img;
+			}
+		});
+
+		$('img.icon1[src$=".svg"], a.icon1 > img.icon[src$=".svg"]').each(function () {
+			var img = $(this), src = img.attr('src');
+			var id = src.replace(/[^a-zA-Z0-9_\-]/g, '-');
+			var svg = $('<svg role="img" xmlns="http://www.w3.org/2000/svg"><use href="#'+id+'"></svg>');
+			// copy all attributes of img to svg
+			$.each(img[0].attributes, function() {
+				if(this.specified) {
+					if(this.name == 'src')
+						return;
+					if(this.name == 'class')
+						return;
+					else if(this.name == 'alt')
+						svg.attr('aria-label', this.value);
+					else if (this.name == 'title')
+						svg.children('title').remove().end().prepend('<title>'+this.value+'</title>');
+					svg.attr(this.name, this.value);
+				}
+			});
+
+			svg.attr('class', 'fx-' + img.attr('class'));
+
+			img.replaceWith(svg);
+
+			//img.attr('src','').hide(); // prevent double loading (once by img html, once by $.get above)
+			if(!sprite.find('#id').length) {
+				if(group[src])
+					group[src] = group[src].add(img);
+				else
+					group[src] = img;
+			}
+		});
+
+		var spriteArray = [];
+		var groupCount = Object.keys(group).length;
+		$.each(group, function(src, imgs) {
+			$.get(src, function (data) {
+				var baseSvg = $(data).children('svg');
+				baseSvg.find('[fill!="none"]').removeAttr('fill');
+				//baseSvg.find('[style*="fill:"]').css('fill', '');
+				baseSvg.find('g').children().removeAttr('stroke');
+				baseSvg.children().removeAttr('stroke');
+/*
+				var symbol = $('<symbol>')
+					.attr('id', src.replace(/[^a-zA-Z0-9_\-]/g, '-'))
+					.attr('viewBox', baseSvg.attr('viewBox'))
+					.html(baseSvg.html())
+					.appendTo(sprite);
+*/
+				//sprite.html(sprite.html() + '<symbol id="' + src.replace(/[^a-zA-Z0-9_\-]/g, '-') + '" viewBox="' + baseSvg.attr('viewBox') + '">' + baseSvg.html() + '</symbol>');
+
+				spriteArray.push('<symbol id="' + src.replace(/[^a-zA-Z0-9_\-]/g, '-') + '" viewBox="' + baseSvg.attr('viewBox') + '">' + baseSvg.html() + '</symbol>');
+				if(spriteArray.length == groupCount)
+					sprite.html(spriteArray.join(''));
+
+			}, 'xml');
+		});
+	},
+
+/*
+		$('img.icon1[src$=".svg"], img.icon[src$=".svg"]').each(function () {
+			var img = $(this);//, svg = (index == imgs.length - 1) ? baseSvg.clone() : baseSvg;
+			var svg = $('<svg xmlns="http://www.w3.org/2000/svg" class="fx-icon"><use href="'+img.attr('src')+'#svg" /></svg>');
+
+			// copy all attributes of img to svg
+			$.each(img[0].attributes, function() {
+				if(this.specified) {
+					if(this.name == 'src')
+						return;
+					if(this.name == 'class')
+						return;
+					else if(this.name == 'alt')
+						svg.attr('aria-label', this.value);
+					else if (this.name == 'title')
+						svg.children('title').remove().end().prepend('<title>'+this.value+'</title>');
+					svg.attr(this.name, this.value);
+				}
+			});
+
+			svg.attr('class', 'icon fx-' + img.attr('class') + (!img.hasClass('icon1') ? ' icon0' : ''));
+
+			img.replaceWith(svg);
+
+			// if the svg is loaded and replaced, we try to draw if it is a widget
+			var img_id = img.attr('id');
+			if (typeof img_id !== 'undefined') {
+				$('#' + img_id.substr(0, img_id.lastIndexOf('-'))).trigger('draw');
+			}
+		});
+*/
+
+	/**
+	 * Initialisation
+	 */
+	init: function () {
+		//Possibliy helpfull in here: http://keith-wood.name/svg.html
+
+		var group = {};
+		$('img.icon1[src$=".svg"], img.do-fx[src$=".svg"], a.icon1 > img.icon[src$=".svg"]').each(function () {
+			var img = $(this), src = img.attr('src');
+			//img.attr('src','').hide(); // prevent double loading (once by img html, once by $.get above)
+			if(group[src])
+				group[src] = group[src].add(img);
+			else
+				group[src] = img;
+		});
+
+		$.each(group, function(src, imgs) {
+			$.get(src, function (data) {
+				var baseSvg = $(data).find('svg');
+				baseSvg.attr('role', 'img');
+				baseSvg.find('[fill!="none"]').removeAttr('fill');
+				//baseSvg.find('[style*="fill:"]').css('fill', '');
+				baseSvg.find('g').children().removeAttr('stroke');
+				baseSvg.children().removeAttr('stroke');
+				//imgs = imgs.replaceWith(svg);
+
+				// if svg has defs (e.g. filter) prepend them to body (otherwise they may get hidden and won't work anymore)
+				if(baseSvg.children('defs').length > 0) {
+					var defsSvg = baseSvg.clone();
+					defsSvg.children(':not(defs)').remove();
+					defsSvg.css('width', 0).css('height', 0).css('visibility', 'hidden').prependTo('body');
+				}
+
+				imgs.each(function(index) {
+					var img = $(this), svg = (index == imgs.length - 1) ? baseSvg : baseSvg.clone();
+
+					// copy all attributes of img to svg
+					$.each(img[0].attributes, function() {
+						if(this.specified) {
+							if(this.name == 'src')
+								return;
+							if(this.name == 'class')
+								return;
+							else if(this.name == 'alt')
+								svg.attr('aria-label', this.value);
+							else if (this.name == 'title')
+								svg.children('title').remove().end().prepend('<title>'+this.value+'</title>');
+							svg.attr(this.name, this.value);
+						}
+					});
+
+					svg.attr('class', 'fx-' + img.attr('class'));
+
+					// Trigger jQuery Mobile initialization
+					$('<div>').append(svg).enhanceWithin();
+
+					img.replaceWith(svg);
+
+					// if the svg is loaded and replaced, we try to draw if it is a widget
+					var img_id = img.attr('id');
+					if (typeof img_id !== 'undefined') {
+						$('#' + img_id.substr(0, img_id.lastIndexOf('-'))).trigger('draw');
+					}
+				});
+
+			}, 'xml');
+		});
+
 	},
 
 	/**
@@ -635,31 +937,31 @@ var fx = {
 	 * Adapted from: https://gist.github.com/mjackson/5311256
 	 */
 	rgb2hsv: function (r, g, b) {
-	  r /= 255, g /= 255, b /= 255;
+		r /= 255, g /= 255, b /= 255;
 
-	  var max = Math.max(r, g, b), min = Math.min(r, g, b);
-	  var h, s, v = max;
+		var max = Math.max(r, g, b), min = Math.min(r, g, b);
+		var h, s, v = max;
 
-	  var d = max - min;
-	  s = max == 0 ? 0 : d / max;
+		var d = max - min;
+		s = max == 0 ? 0 : d / max;
 
-	  if (max == min) {
-	    h = 0; // achromatic
-	  } else {
-	    switch (max) {
-	      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-	      case g: h = (b - r) / d + 2; break;
-	      case b: h = (r - g) / d + 4; break;
-	    }
+		if (max == min) {
+			h = 0; // achromatic
+		} else {
+			switch (max) {
+				case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+				case g: h = (b - r) / d + 2; break;
+				case b: h = (r - g) / d + 4; break;
+			}
 
-	    h /= 6;
-	  }
+			h /= 6;
+		}
 
 		h = Math.round(h * 360);
 		s = Math.round(s * 100);
 		v = Math.round(v * 100);
 
-	  return [ h, s, v ];
+		return [ h, s, v ];
 	},
 
 	/**
@@ -667,7 +969,7 @@ var fx = {
 	 * Adapted from: https://gist.github.com/mjackson/5311256
 	 */
 	hsl2rgb: function (h, s, l) {
-	  var r, g, b;
+		var r, g, b;
 
 		// test range
 		h = Math.max(0, Math.min(360, h));
@@ -678,31 +980,31 @@ var fx = {
 		s /= 100;
 		l /= 100;
 
-	  if (s == 0) {
-	    r = g = b = l; // achromatic
-	  } else {
-	    function hue2rgb(p, q, t) {
-	      if (t < 0) t += 1;
-	      if (t > 1) t -= 1;
-	      if (t < 1/6) return p + (q - p) * 6 * t;
-	      if (t < 1/2) return q;
-	      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-	      return p;
-	    }
+		if (s == 0) {
+			r = g = b = l; // achromatic
+		} else {
+			function hue2rgb(p, q, t) {
+				if (t < 0) t += 1;
+				if (t > 1) t -= 1;
+				if (t < 1/6) return p + (q - p) * 6 * t;
+				if (t < 1/2) return q;
+				if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+				return p;
+			}
 
-	    var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-	    var p = 2 * l - q;
+			var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+			var p = 2 * l - q;
 
-	    r = hue2rgb(p, q, h + 1/3);
-	    g = hue2rgb(p, q, h);
-	    b = hue2rgb(p, q, h - 1/3);
-	  }
+			r = hue2rgb(p, q, h + 1/3);
+			g = hue2rgb(p, q, h);
+			b = hue2rgb(p, q, h - 1/3);
+		}
 
 		r = Math.round(r * 255);
 		g = Math.round(g * 255);
 		b = Math.round(b * 255);
 
-	  return [ r, g, b ];
+		return [ r, g, b ];
 	},
 
 	/**
@@ -710,31 +1012,31 @@ var fx = {
 	 * Adapted from: https://gist.github.com/mjackson/5311256
 	 */
 	rgb2hsl: function (r, g, b) {
-	  r /= 255, g /= 255, b /= 255;
+		r /= 255, g /= 255, b /= 255;
 
-	  var max = Math.max(r, g, b), min = Math.min(r, g, b);
-	  var h, s, l = (max + min) / 2;
+		var max = Math.max(r, g, b), min = Math.min(r, g, b);
+		var h, s, l = (max + min) / 2;
 
-	  if (max == min) {
-	    h = s = 0; // achromatic
-	  } else {
-	    var d = max - min;
-	    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+		if (max == min) {
+			h = s = 0; // achromatic
+		} else {
+			var d = max - min;
+			s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
 
-	    switch (max) {
-	      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-	      case g: h = (b - r) / d + 2; break;
-	      case b: h = (r - g) / d + 4; break;
-	    }
+			switch (max) {
+				case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+				case g: h = (b - r) / d + 2; break;
+				case b: h = (r - g) / d + 4; break;
+			}
 
-	    h /= 6;
-	  }
+			h /= 6;
+		}
 
 		h = Math.round(h * 360);
 		s = Math.round(s * 100);
 		l = Math.round(l * 100);
 
-	  return [ h, s, l ];
+		return [ h, s, l ];
 	},
 
 	hsv2hsl: function (h, s, v) {
@@ -749,7 +1051,7 @@ var fx = {
 		so = Math.round(so * 100);
 		l = Math.round(l * 100);
 
-	  return [ h, so, l ];
+		return [ h, so, l ];
 	},
 
 	hsl2hsv: function (h, s, l) {
@@ -765,7 +1067,7 @@ var fx = {
 		so = Math.round(so * 100);
 		v = Math.round(v * 100);
 
-	  return [ h, so, v ];
+		return [ h, so, v ];
 	}
 };
 
@@ -775,23 +1077,25 @@ var fx = {
  */
 var notify = {
 
+	// incremental message id
 	i: 0,
 
 	// a list with all values, all communication it through the buffer
-	messages: {},
+	messagesIndexed: {},
+	messagesPerLevel: { error: [], warning: [], info: [], debug: [], update: [] },
 
 	/**
-	 *  Checks if there are any messages
+	 * Checks if there are any messages
 	 */
 	exists: function (id) {
 		if(id !== undefined) {
-			return Object.prototype.hasOwnProperty.call(notify.messages, id);
+			return Object.prototype.hasOwnProperty.call(notify.messagesIndexed, id);
 		}
 		else { // check if any exists
 			for (var prop in notify.messages) {
-		    if (Object.prototype.hasOwnProperty.call(notify.messages, prop)) {
-		      return true;
-		    }
+				if (Object.prototype.hasOwnProperty.call(notify.messagesIndexed, prop)) {
+					return true;
+				}
 			}
 			return false;
 		}
@@ -800,56 +1104,54 @@ var notify = {
 	/**
 	 * Add a new message
 	 */
-	add: function (level, signal, title, text) {
-		notify.i++;
-		notify.messages[notify.i] = ({level: level, signal: signal, title: title, text: text, time: Date.now()});
+	add: function (level, signal, title, text, ackitem, ackval) {
+		if (text.toLowerCase().trim().substr(-16 ) == 'operation failed')
+			text += '<br><br><u>Notice:</u><br>The message "operation failed" is thrown if a connect fails before the request can be executed. ' 
+				+'Very often, this is due to failed ssl communication. Try calling the service directly in debug mode for more information.<br><br>'
+				+'<u>Example:</u><br> YourIP/YourSmartvisuDir/lib/weather/service/YourService.php?debug=1';   
+		var message = {level: level, signal: signal, title: title, text: text, time: Date.now(), id: ++notify.i, ackitem: ackitem, ackval: ackval}
+		notify.messagesIndexed[message.id] = message;
+		notify.messagesPerLevel[level].push(message);
 
 		// log to console
-		console.log('[notify.' + notify.messages[notify.i].level + '] ' + notify.messages[notify.i].title + ' - ' + notify.messages[notify.i].text);
+		console.log('[notify.' + level + '] ' + 'id = '+ message.id +': ' + title + ' - ' + text);
 
 		// return id
-		return notify.i;
+		return message.id;
 	},
 
 	/**
-	 * Add a new debug-message
+	 * Add a new notification message
 	 */
-	debug: function (title, text) {
-		//notify.add('debug', 'DEBUG', title, text);
-	},
-
-	/**
-	 * Add a new update-message
-	 */
-	update:function (title, text) {
-		var id = notify.add('update', 'UPDATE', title, text);
+	message:function (level, title, text) {
+		var id = notify.add(level, sv_lang.status_event_format[level].signal, title, text);
 		notify.display();
 		return id;
 	},
 
 	/**
-	 * Add a new info-message
+	 * Add a new info-message - deprecated: use notify.message("info",...) instead
 	 */
 	info: function (title, text) {
-		var id = notify.add('info', 'INFO', title, text);
+		var id = notify.add('info', sv_lang.status_event_format.info.signal, title, text);
 		notify.display();
 		return id;
 	},
 
 	/**
-	 * Add a new warn-message
+	 * Add a new warn-message - deprecated: use notify.message("warning",...) instead
 	 */
 	warning: function (title, text) {
-		var id = notify.add('warning', 'WARN', title, text);
+		var id = notify.add('warning', sv_lang.status_event_format.warning.signal, title, text);
 		notify.display();
 		return id;
 	},
 
 	/**
-	 * Add a new error-message
+	 * Add a new error-message - deprecated: use notify.message("error",...) instead
 	 */
 	error: function (title, text) {
-		var id = notify.add('error', 'ERROR', title, text);
+		var id = notify.add('error', sv_lang.status_event_format.error.signal, title, text);
 		notify.display();
 		return id;
 	},
@@ -865,44 +1167,108 @@ var notify = {
 	 * @param    '610 smartVISU Updatecheck Error'
 	 */
 	json: function (jqXHR, status, errorthrown) {
+		//console.log ('Ajax request failed with status: "'+status+'" and message: "'+errorthrown+'" in smartVISU process "'+jqXHR.svProcess+'".');
+		//console.log (jqXHR);
+		
+		var message=[];
+		if (jqXHR.responseJSON != undefined){
+			if (jqXHR.responseJSON instanceof Array && jqXHR.responseJSON[0].title != null)		//response from smartVISU services 
+				message = jqXHR.responseJSON[0]; 
+			else if (jqXHR.responseJSON.title != null)											//response e.g. from smartVISU drivers 
+				message = jqXHR.responseJSON;
+		}
+		if (message.length < 1) {																// other ajax responses
+			var errortitles = ['timeout', 'error', 'abort', 'parsererror', 'servererror'];
+			message.title = (errortitles.includes(status) ? sv_lang.status_event_format.error[status] : sv_lang.status_event_format.error.na);
+			if (jqXHR.svProcess != undefined)
+				message.title += ' in '+jqXHR.svProcess;
+			message.text = (jqXHR.status != 0 ? 'HTTP ' + jqXHR.status + ' - ' : '') + (errortitles.includes(jqXHR.statusText) ? sv_lang.status_event_format.error[jqXHR.statusText] : jqXHR.statusText);
+			if (jqXHR.responseText != undefined)
+				message.text += jqXHR.responseText;
+		}
 
-		var message = (jqXHR.responseJSON != null) ? jqXHR.responseJSON[0] : { "title": "Unknown Error", "text": jqXHR.responseText };
-
-		notify.add('error', 'ERROR', message.title, message.text);
+		var id = notify.add('error', sv_lang.status_event_format.error.signal, message.title, message.text);
+		
 		notify.display();
+		return id;
 	},
 
 	/**
 	 * Removes a note, or all if no id is given
 	 */
-	remove: function (id) {
-		var message = notify.messages[notify.i];
-
-		$('.alert').popup('close');
-		$('.signal').removeClass(message.level).hide();
+	remove: function (id, opennext) {
 
 		if (id !== undefined) {
-			delete notify.messages[id];
+			var message = notify.messagesIndexed[id];
+			if (message != undefined) {
+				delete notify.messagesIndexed[id];
+				messagesInCurrentLevel = notify.messagesPerLevel[message.level];
+				for(var i = 0; i < messagesInCurrentLevel.length; i++) {
+					if(messagesInCurrentLevel[i].id == id) {
+						messagesInCurrentLevel.splice(i, 1);
+						break;
+					}
+				}
+
+				if(message.ackitem)
+					io.write(message.ackitem, message.ackval);
+			}
 		}
 		else {
-			notify.messages = {};
+			notify.messagesIndexed = {};
+			notify.messagesPerLevel = { error: [], warning: [], info: [], debug: [], update: [] };
 		}
+
+		notify.display(opennext);
+
 	},
 
 	/**
 	 * Displays the message at the top right corner
 	 */
-	display: function () {
-		var message = notify.messages[notify.i];
+	display: function (openpopup) {
+
+		// find next message with priority according to level order in messagesPerLevel
+		var message;
+		if(Object.keys(notify.messagesIndexed).length > 0) {
+			for(var level in notify.messagesPerLevel) {
+				if(message = notify.messagesPerLevel[level][0])
+					break;
+			}
+		}
 
 		if (message) {
+			$('.signal').removeClass(Object.keys(notify.messagesPerLevel).join(" ")).addClass(message.level).html(message.signal).show();
 			$('.alert h1').html(message.title);
 			$('.alert p').html(message.text);
 			$('.alert .stamp').html(new Date(message.time).transShort());
-			$('.signal').addClass(message.level).html(message.signal).show();
+			$('.alert').data('message-id', message.id);
+			if(openpopup)
+				$('.alert').popup('open');
+		}
+		else {
+			$('.signal').removeClass(Object.keys(notify.messagesPerLevel).join(" ")).hide();
+			$('.alert').data('message-id', null).filter(':data("mobile-popup")').popup('close');
 		}
 	}
 };
+
+// create signal corner and global popup
+$(document).on('pagecreate', function (event, ui) {
+	if(!$('#alert-popup').length)
+		$('<div class="alert" id="alert-popup" data-theme="a" data-overlay-theme="a"> <div data-role="header" data-theme="c"><h1 style="white-space: normal;"></h1></div> <p></p> </div>')
+			.append(
+				$('<div class="control"><span class="stamp"></span> </div>')
+				.append($('<a class="ui-btn ui-btn-a ui-btn-inline ui-mini ui-icon-check ui-btn-icon-top ui-corner-all ui-shadow">OK</a>').on('click', function() { notify.remove($('#alert-popup').data('message-id'), true); }))
+				.append($('<a class="ui-btn ui-btn-a ui-btn-inline ui-mini ui-icon-delete ui-btn-icon-top ui-corner-all ui-shadow">Cancel</a>').on('click', function() { $('#alert-popup').popup('close'); }))
+			)
+			.prependTo('body')
+			.enhanceWithin()
+			.popup()
+
+	$(event.target).remove('.signal');
+	$('<div class="signal hide">').prependTo($(event.target)).on('click', function() { $('#alert-popup').popup('open'); });
+});
 
 
 /**
@@ -986,18 +1352,18 @@ var repeater = {
  *
  * Concept:
  * --------
- * Every item has a name. The value of the item may be of type: int, float, or
- * array. The items are stored in the widget.buffer. The drivers will fill the
- * buffer through the widget.update (and therefore widget.set). Asynchronly
- * all widgets on a page may be updated. The update is been triggerd from
- * widget.update, if a item has been changed. Updates are only made if all
- * items are in buffer needed for that update. If one is missing the update is
- * not been made. If some plots placed on the page, the update will look if it
- * is possible to add only one point (if the widget is already initialized).
+ * Every item has a name. The value of the item may be of type int, float, or
+ * array. The items are stored in the array "widget.buffer". The drivers fill 
+ * the buffer through "widget.update" (and therefore widget.set). All widgets 
+ * on a page may be updated asynchronously. This is triggerd by widget.update
+ * as soon as an item change is received via the driver. Updates are only made 
+ * if all items needed are available in the buffer. If one is missing the update 
+ * is skipped. If plots are placed on the page, the update will check whether it
+ * is possible to add only new points (if the widget is already initialized).
  *
  * Events:
  * -------
- * Some new events are introduced to control the widgets and there visual
+ * Some new events are introduced to control the widgets and their visual
  * appearance.
  *
  * 'init': function(event) { }
@@ -1012,6 +1378,10 @@ var repeater = {
  *
  * 'change', 'click' ...
  * Standard jquery-mobile events, triggered from the framework.
+ *
+ * 'exit': function() 
+ * Triggered when page is being left in order to stop certain activities of the
+ * widgets (e.g. delete timers)  
  *
  */
 var widget = {
@@ -1028,21 +1398,15 @@ var widget = {
 	 */
 	explode: function (text) {
 		var ret = Array();
-		var unique = Array();
-
+		
 		// More than one item?
 		if (text.indexOf(',') >= 0) {
 			var parts = text.explode();
 
 			for (var i = 0; i < parts.length; i++) {
-				if (parts[i] != '') {
-					unique[parts[i]] = '';
-				}
+				if(!ret.includes(parts[i]) && parts[i] != '' )	ret.push(parts[i]);	
 			}
 
-			for (var part in unique) {
-				ret.push(part);
-			}
 		}
 
 		// One item
@@ -1075,7 +1439,7 @@ var widget = {
 	 */
 	check: function (values) {
 
-		// case: more values
+		// case: multiple values
 		if (values instanceof Array) {
 			for (var i = 0; i < values.length; i++) {
 				if (values[i] === undefined || values[i] == null) {
@@ -1098,18 +1462,25 @@ var widget = {
 	 * @return   string  a single value or an array of values
 	 */
 	get: function (items) {
+		var ret;
 
 		// case: more items
 		if (items instanceof Array) {
-			var ret = Array();
+			ret = Array();
 
 			for (var i = 0; i < items.length; i++) {
-				ret.push(widget.buffer[items[i]]);
+				if(widget.checkseries(items[i]) && widget.buffer[items[i]] != null)
+					ret.push(Object.values(widget.buffer[items[i]]).sort(function(a,b){return a[0]-b[0]}));
+				else
+					ret.push(widget.buffer[items[i]]);
 			}
 		}
 		// case: one item
 		else {
-			var ret = widget.buffer[items];
+			if(widget.checkseries(items) && widget.buffer[items] != null)
+				ret = Object.values(widget.buffer[items]).sort(function(a,b){return a[0]- b[0]});
+			else
+				ret = widget.buffer[items];
 		}
 
 		return ret;
@@ -1124,14 +1495,32 @@ var widget = {
 	set: function (item, value) {
 
 		// case: a series
-		if(widget.checkseries(item) && widget.buffer[item] !== undefined) {
+		if(widget.checkseries(item)) {
+			if(widget.buffer[item] === undefined)
+				widget.buffer[item] = {};
 			var b = widget.buffer[item];
+			var definition = widget.parseseries(item);
+			var minstart = new Date() - new Date().duration(definition.start);
+			var maxend = new Date() - new Date().duration(definition.end);
 			// add values
-			Array.prototype.push.apply(b, value)
-			// remove old values
-			var maxLen = item.split('.').slice(-1); // series length from item
-			while(b.length > maxLen)
-				b.shift();
+			$.each(value, function(idx, val) {
+				b[val[0]] = val;
+			});
+			// remove values which are not in desired time window
+			var lastbeforekey = null;
+			for(key in b) {
+				if(key < minstart) {
+					// last value before time window should be preserved
+					if(lastbeforekey < key) {
+						delete b[lastbeforekey];
+						lastbeforekey = key;
+					}
+					else
+						delete b[key]
+				}
+				//if(key > maxend)
+				//	delete b[key];
+			}
 		}
 		else if (value !== undefined) {
 			widget.buffer[item] = ( $.isNumeric(value) ? value * 1.0 : value);
@@ -1141,8 +1530,8 @@ var widget = {
 	},
 
 	/**
-	 * Update an item and all widgets listening on that. The value is been written
-	 * to the buffer and the widgets are called if all values are set.
+	 * Update an item and all widgets listening on that. Write the value
+	 * to the buffer and call the widgets update methods if all values are set.
 	 *
 	 * @param    item   the item
 	 * @param    value  the value
@@ -1153,89 +1542,38 @@ var widget = {
 		if (value === undefined || widget.buffer[item] === undefined || widget.buffer[item] !== value && !(widget.buffer[item] instanceof Array && widget.buffer[item].equals(value))) {
 
 			widget.set(item, value);
-
-			$.mobile.activePage.find('[data-item*="' + item + '"]').filter('[data-is-sv-widget]').trigger('update', [item, value]) // new jQuery Mobile style widgets
-			.end().filter(':not([data-is-sv-widget])').each(function (idx) { // Old-style widgets
-				console.warn('Old plane smartVISU widgets are deprecated. Use a jQuery widget based on $.sv.widget instead.', this);
-
- 				var items = widget.explode($(this).attr('data-item'));
-
-				// update to a plot: only add a point
-				if ($(this).attr('data-widget').substr(0, 5) == 'plot.' && $(this).highcharts()) { // alternative: jQuery._data( this, "events" )['point'] !== undefined;
-					if (value !== undefined) {
-						var values = [];
-						// if more than one item, only that with the value
-						for (var j = 0; j < items.length; j++) {
-							values.push(items[j] == item ? value : null);
-						}
-						// DEBUG:
-						console.log("[" + $(this).attr('data-widget') + "] point '" + this.id + "':", values);
-						$(this).trigger('point', [values]);
-					}
-				}
-
-				// regular update to the widget with all items
-				else {
-					values = widget.get(items);
-					if (widget.check(values)) {
-						// DEBUG:
-						console.log("[" + $(this).attr('data-widget') + "] update '" + this.id + "':", values);
-						if($(this).data('sv.widget'))
-							$(this).data('sv.widget').update(values);
-						else
-							$(this).trigger('update', [values]);
-					}
-				}
-
-			});
+			
+			$(":mobile-pagecontainer").pagecontainer( "getActivePage" ).find('[data-item*="' + item + '"]').filter(':data("sv-widget")').widget('update', widget.get(item), item) // new jQuery Mobile style widgets
+			
 		}
 	},
 
-	/**
-	 * Prepares some widgets on the current page.
-	 * Bind to jquery mobile 'pagebeforeshow'.
-	 */
-	prepare: function () {
-		// all plots on the current page.
-		$.mobile.activePage.find('[data-widget^="plot."][data-item]:not([data-is-sv-widget])').each(function (idx) {
-			console.warn('Old plane smartVISU widgets are deprecated. Use a jQuery widget based on $.sv.widget instead.', this);
-			if ($(this).highcharts()) {
-				$(this).highcharts().destroy();
-			}
-		});
-	},
 
 	/**
 	 * Refreshes all widgets on the current page. Used to put the values to the
 	 * widgets if a new page has been opened. Bind to jquery mobile 'pageshow'.
 	 */
 	refresh: function () {
-
-		$.mobile.activePage.find('[data-item]').filter('[data-is-sv-widget]').trigger('update')
-			.end().filter(':not([data-is-sv-widget])').each(function (idx) {
-			console.warn('Old plane smartVISU widgets are deprecated. Use a jQuery widget based on $.sv.widget instead.', this);
-
-			var values = widget.get(widget.explode($(this).attr('data-item')));
-
-			if (widget.check(values)) {
-				$(this).trigger('update', [values]);
-				console.log("[" + $(this).attr('data-widget') + "] update '" + this.id + "':", values);
-			}
-		});
+		$(":mobile-pagecontainer").pagecontainer( "getActivePage" ).find('[data-item]').filter(':data("sv-widget")').widget('update') // new jQuery Mobile style widgets
 
 		//TODO: call io.run here instead of this in io.run and io.run in root.html
+		// config_driver_realtime needs to be evaluated
 
-		//widget.getUrlData();
 	},
 
+
 	/**
-	 * Get data from
-	 * Called by widget.refresh and in widgets repeat events.
+	 * Get data from url 
+	 * Called in widgets repeat events, e.g. calendar.
 	 */
 	getUrlData: function (jqWidgets) {
 		$.each(widget.urls(jqWidgets), function(idx, url) {
-			$.get(url.substr(4), function (data) {
-				widget.update(url, data);
+			$.ajax({
+				url: url.substr(4), 
+				beforeSend: function(jqXHR, settings) { jqXHR.svProcess = 'Get URL Data'; },
+				success: function (data) {
+					widget.update(url, data);
+				}
 			})
 			.fail(notify.json);
 		});
@@ -1254,6 +1592,17 @@ var widget = {
 		return ($.inArray(aggregate, Array('avg', 'min', 'max', 'sum', 'diff', 'rate', 'on', 'raw', 'count')) >= 0);
 	},
 
+	/**
+	 * Splits a series item in its parts, e.g. "foo.bar.max.24h.now.100" to {item: "foo.bar", aggregate: "max", start: "24h", end: "now", count: "100"}
+	 */
+	parseseries: function (item) {
+		if (widget.checkseries(item)) {
+			var pt = item.split('.');
+			return {'item': pt.slice(0, pt.length - 4).join('.'), 'mode': pt[pt.length - 4], 'start': pt[pt.length - 3], 'end': pt[pt.length - 2], 'count': pt[pt.length - 1]}
+		}
+		else
+			return null;
+	},
 
 	// ----- l i s t e n e r s ------------------------------------------------
 
@@ -1263,10 +1612,9 @@ var widget = {
 	 * @return    array  unique list of the items
 	 */
 	listeners: function () {
-		var ret = Array();
-		var unique = Array();
+		var unique = {};
 
-		$.mobile.activePage.find('[data-item]').each(function (idx) {
+		$(":mobile-pagecontainer").pagecontainer( "getActivePage" ).find('[data-item]').each(function (idx) {
 			if (!($(this).attr('data-widget') == 'status.log')) {
 				var items = widget.explode($(this).attr('data-item'));
 				for (var i = 0; i < items.length; i++) {
@@ -1277,11 +1625,7 @@ var widget = {
 			}
 		});
 
-		for (var item in unique) {
-			ret.push(item);
-		}
-
-		return ret;
+		return Object.keys(unique);
 	},
 
 	/**
@@ -1290,11 +1634,10 @@ var widget = {
 	 * @return    array  unique list of urls
 	 */
 	urls: function (jqWidgets) {
-		var ret = Array();
-		var unique = Array();
+		var unique = {};
 
 		if(jqWidgets == null)
-			jqWidgets = $.mobile.activePage.find('[data-item*="url:"]');
+			jqWidgets = $(":mobile-pagecontainer").pagecontainer( "getActivePage" ).find('[data-item*="url:"]');
 
 		jqWidgets.each(function (idx) {
 			var items = widget.explode($(this).attr('data-item'));
@@ -1305,11 +1648,53 @@ var widget = {
 			}
 		});
 
-		for (var item in unique) {
-			ret.push(item);
-		}
+		return Object.keys(unique);
+	},
 
-		return ret;
+	/**
+	 * Returns all unique series items.
+	 *
+	 * @param    item  item: matches all plot-widgets with that item
+	 * @return   array  unique list of the items
+	 */
+	series: function (item) {
+		var unique = {};
+
+		$(":mobile-pagecontainer").pagecontainer( "getActivePage" ).find('[data-widget^="plot."][data-item'+(item ? '*="' + item + '"' : '')+']').each(function (idx) {
+			var items = widget.explode($(this).attr('data-item'));
+			$.each(items, function(idx, currentItem) {
+				if ((!item || currentItem == item) && widget.checkseries(currentItem)) {
+					unique[currentItem] = widget.parseseries(currentItem);
+				}
+			});
+		})
+
+		return Object.values(unique);
+	},
+
+	/**
+	 * Returns all unique log items with count.
+	 *
+	 * @param    item  item: matches only that item
+	 * @return   array  unique list of objects containing item and count
+	 */
+	logs: function (item) {
+		var unique = {};
+
+		$(":mobile-pagecontainer").pagecontainer( "getActivePage" ).find('[data-widget="status.log"][data-item'+(item ? '*="' + item + '"' : '')+']').each(function (idx) {
+			var jqNodes = $(this);
+			var items = widget.explode(jqNodes.attr('data-item'));
+			var count = jqNodes.attr('data-count');
+			$.each(items, function(idx, currentItem) {
+				if (!item || currentItem == item) {
+					if(unique[currentItem] && unique[currentItem].count > count) // get the highest occurring count of that item
+						count = unique[currentItem].count;
+					unique[currentItem] = {"item": currentItem, "count": count};
+				}
+			});
+		})
+
+		return Object.values(unique);
 	},
 
 	/**
@@ -1323,7 +1708,7 @@ var widget = {
 		var ret = $();
 
 		if (item) {
-			$.mobile.activePage.find('[data-widget^="plot."][data-item*="' + item + '"]').each(function (idx) {
+			$(":mobile-pagecontainer").pagecontainer( "getActivePage" ).find('[data-widget^="plot."][data-item*="' + item + '"]').each(function (idx) {
 				var items = widget.explode($(this).attr('data-item'));
 				for (var i = 0; i < items.length; i++) {
 					if (items[i] == item) {
@@ -1333,7 +1718,7 @@ var widget = {
 			})
 		}
 		else {
-			ret = $.mobile.activePage.find('[data-widget^="plot."][data-item]');
+			ret = $(":mobile-pagecontainer").pagecontainer( "getActivePage" ).find('[data-widget^="plot."][data-item]');
 		}
 
 		return ret;
@@ -1350,7 +1735,7 @@ var widget = {
 		var ret = $();
 
 		if (item) {
-			$.mobile.activePage.find('[data-widget="status.log"][data-item="' + item + '"]').each(function (idx) {
+			$(":mobile-pagecontainer").pagecontainer( "getActivePage" ).find('[data-widget="status.log"][data-item="' + item + '"]').each(function (idx) {
 				var items = widget.explode($(this).attr('data-item'));
 				for (var i = 0; i < items.length; i++) {
 					if (items[i] == item) {
@@ -1360,7 +1745,7 @@ var widget = {
 			})
 		}
 		else {
-			ret = $.mobile.activePage.find('[data-widget="status.log"][data-item]');
+			ret = $(":mobile-pagecontainer").pagecontainer( "getActivePage" ).find('[data-widget="status.log"][data-item]');
 		}
 
 		return ret;
@@ -1374,19 +1759,49 @@ var widget = {
  * G L O B A L   E V E N T   H A N D L E R S
  * -----------------------------------------------------------------------------
  */
-
+ 
 /**
  * Append pages parameter to async page loads if one is passed in url
  */
-$(document).on("pagebeforeload", function(event, data) {
+$(document).on("pagecontainerbeforeload", function(event, data) {
 	var regExPagesParam = /[?&](pages=.+?)(&|$)/;
 	var locationPages = (regExPagesParam.exec(location.search)||[,""])[1];
 	var loadPages = (regExPagesParam.exec(data.url)||[,""])[1];
 	if(locationPages != "" && loadPages == "") {
 		event.preventDefault();
 		data.deferred.reject(data.absUrl, data.options);
-		$.mobile.changePage(data.url + (data.url.indexOf("?") == -1 ? "?" : "&") + locationPages);
+		$.mobile.pageContainer.pagecontainer("change", data.url + (data.url.indexOf("?") == -1 ? "?" : "&") + locationPages);
 	}
+});
+
+/** 
+ * stop series subscriptions and trigger 'exit' method in all widgets on current page
+ * before new page is being loaded. Trigger only if page is different (not just a return to same page)
+ */
+ $(document).on('pagecontainerbeforetransition', function(event,ui) {
+	if (ui.prevPage!= undefined && ui.toPage[0].id != ui.prevPage[0].id) { 
+		io.stopseries ();
+		$(":mobile-pagecontainer").pagecontainer( "getActivePage" ).find('[data-widget]').filter(':data("sv-widget")').widget('exit');
+	}
+});
+
+/** 
+* modify links on pages with special ressources loaded (config, templatechecker, widget_assistant)
+* in order to force a reload when the page is being left and thus remove the special ressources from the DOM
+*/
+$(document).on('pagecontainerchange', function(event, ui) {
+	$(":mobile-pagecontainer").pagecontainer( "getActivePage" ).filter('#config, #templatechecker, #widget_assistant')
+		.find('[href^="index.php"]').attr('data-ajax', false) 		// modify all internal links to block ajax navigation
+		.end().each(function(){										// block browser back / foreward buttons
+			var currentURL = $(this).context.baseURI;
+			$(document).on("pagecontainerbeforechange", function (e, data) {
+				if (typeof data.toPage == "string" && data.prevPage != undefined  && data.options.role != "popup" && data.options.role != "dialog" && data.options.direction != "back") {  
+					data.toPage = currentURL;
+					history.pushState(null,'',currentURL);
+					console.log(currentURL + ': clear history in order to block the back / forward buttons');
+					}
+			});
+		});
 });
 
 /**
@@ -1417,208 +1832,9 @@ $.widget( "ui.tabs", $.ui.tabs, {
 
 /**
  * -----------------------------------------------------------------------------
- * C O F I G U R A T I O N   P A G E
+ * P R O T O T Y P E   F O R   S V . W I D G E T S
  * -----------------------------------------------------------------------------
  */
-function changeDisabledState(parent, disable) {
-	return parent
-		.find('.ui-select select').prop('disabled', disable).selectmenu(disable ? 'disable' : 'enable').end()
-		.find('.ui-flipswitch select').prop('disabled', disable).flipswitch(disable ? 'disable' : 'enable').end()
-		.find('.ui-input-text input').textinput(disable ? 'disable' : 'enable').end()
-		//.find('input:not(label input)').textinput(disable ? 'disable' : 'enable').end()
-		//.end().find('.ui-button input').button(disable ? 'disable' : 'enable').end()
-		.find('button').prop('disabled', disable).end()
-		.find('input[type="hidden"]').prop('disabled', disable).end();
-}
-
-function setMobileWidgetValue(field, value) {
-	return field.val(value)
-		.filter('select[data-native-menu="false"]').selectmenu('refresh').end()
-		.filter('select[data-role="flipswitch"]').flipswitch('refresh').end();
-}
-
-// click on row enables input
-$(document).on('click', '#config .ui-field-contain',function(event) {
-	if(!$(event.target).closest('.ui-field-contain label.ui-btn').length && !$(event.target).closest('.ui-field-contain .ui-help-icon').length)
-		changeDisabledState($(this).closest('.ui-field-contain'), false).find('label.ui-btn').addClass('ui-btn-active');
-});
-// click on label disables input
-$(document).on('click', '#config .ui-field-contain label.ui-btn',function(event) {
-	if($(this).hasClass('ui-btn-active'))
-		changeDisabledState($(this).closest('.ui-field-contain'), true).find('label.ui-btn').removeClass('ui-btn-active');
-	else
-		$(this).closest('.ui-field-contain').trigger('click');
-});
-
-$(document).on('pagecreate', function (event, ui) {
-	var page = $(event.target);
-
-	if(event.target.id == 'config') {
-
-		page.find('select, input').trigger('init');
-
-		var authform = page.find('#googleauthform');
-
-		// load google API (either in page or in iframe to work around google's restriction of private IP numbers as origins)
-		var googleOrigin;
-		if(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(location.hostname)) {
-			googleOrigin = location.origin.replace(location.hostname, location.hostname + '.nip.io');
-			authform.find('#googleauthframe').remove();
-			$('<iframe id="googleauthframe" style="position: absolute; width: 100%; left: 0; right: 0; top: 0; bottom: 0; z-index: 99999; background-color: transparent; border: none;">').attr('src', googleOrigin + location.pathname + '?page=config.google' )
-				.prependTo(authform.find('#calendar_googleauth_submitcontainer'))
-				.on('click', function(e) {
-					e.preventDefault();
-					e.stopPropagation();
-				});
-		}
-		else {
-			googleOrigin = location.origin;
-			$.getScript("https://apis.google.com/js/api.js")
-				.done(function() {
-					gapi.load('auth2', function() {
-						try {
-							gapi.auth2.authorize(
-								// Work around a possible bug in gapi.auth2.authorize with IE11 and Edge
-								{
-									client_id: ' ',
-									scope: 'https://www.googleapis.com/auth/calendar.readonly',
-									prompt: 'none'
-								},
-								function() { }
-							);
-						}
-						catch(ex) { }
-					});
-				})
-				.fail(notify.json);
-		}
-
-		var resolveRefreshToken = function(code) {
-			var client_id = authform.find('#client_id').val();
-			var client_secret = authform.find('#client_secret').val();
-			$.ajax({
-				url: 'https://www.googleapis.com/oauth2/v4/token',
-				method: 'POST',
-				cache: false,
-				dataType: 'json',
-				data: {
-					'client_id': client_id,
-					'client_secret': client_secret,
-					'redirect_uri': 'postmessage',
-					'grant_type': 'authorization_code',
-					'code': code
-				}
-			})
-			.done(function(data) {
-				var currentTarget = page.find("#config_source ul li").eq($("#config_source").tabs("option", "active")).data('source');
-				page.find('#'+currentTarget+'_calendar_google_client_id').val(client_id);
-				page.find('#'+currentTarget+'_calendar_google_client_secret').val(client_secret);
-				page.find('#'+currentTarget+'_calendar_google_refresh_token').val(data.refresh_token);
-				page.find('#calendar_googleauth_popup').popup('close');
-			})
-			.fail(notify.json);
-		}
-
-		$(window).on('message', function(e) {
-			if(e.originalEvent.data.subject != 'googleauth')
-				return;
-
-			if(e.originalEvent.origin != googleOrigin)
-				throw "Invalid origin";
-
-			var error = e.originalEvent.data.error;
-			if(error) {
-				notify.error("Google authentication", error.message || error.code);
-				throw error.message || error.code;
-			}
-
-			var code = e.originalEvent.data.code;
-			if(code == null) {
-				notify.error("Google authentication", "No code received");
-				throw "No code received";
-			}
-			resolveRefreshToken(code);
-		})
-
-		authform
-			.find('#script_origin').val(googleOrigin).end()
-
-			.find('#google_json_file').on('change', function() {
-				if(window.FileReader == null || this.files === undefined || this.files.length === 0 || this.files[0] == null)
-					return;
-				var reader = new FileReader();
-				reader.onload = function(event) {
-					$('#google_json_text').val(event.target.result).change();
-				};
-				reader.onerror = function(event) {
-					notify.error('FileReader', event.target.error.code);
-				};
-				reader.readAsText(this.files[0]);
-			}).end()
-
-			.find('#google_json_text').on('change', function() {
-				var googleData = $.parseJSON($(this).val());
-				$('#client_id').val(googleData.web.client_id).change();
-				$('#client_secret').val(googleData.web.client_secret);
-			}).end()
-
-			.find('#client_id').on('change', function() {
-				if(googleOrigin != location.origin) {
-					var clientId = $(this).val();
-					authform.find('#googleauthframe')[0].contentWindow.postMessage({ subject: 'googleauth', clientId: clientId }, googleOrigin);
-				}
-			}).end()
-
-			.on('submit', function() {
-				var clientId = $(this).find('#client_id').val();
-				gapi.auth2.authorize(
-					{
-						client_id: clientId,
-						scope: 'https://www.googleapis.com/auth/calendar.readonly',
-						prompt: 'consent',
-						response_type: 'code'
-					},
-					function(resp) {
-						if (resp.error)
-							// possible errors: idpiframe_initialization_failed (with subtype), popup_closed_by_user, popup_blocked_by_browser, access_denied, immediate_failed
-							notify.error("Google authentication", resp.error_subtype || resp.error);
-						else
-							resolveRefreshToken(resp.code);
-					}
-				);
-				return false;
-			});
-
-		page.find('form.configform').on('submit', function() {
-			$.ajax({
-				type: "POST",
-				url: 'pages/base/configure.php?&target=' + $("#config_source ul li").eq($("#config_source").tabs("option", "active")).data('source') + '&pages='  + $('#config #current_pages').val(),
-				data: $(this).serialize(),
-				success: function (data) {
-					location.reload(true);
-				}
-			})
-			.fail(notify.json);
-			return false;
-		});
-
-		page.find('#clear_cache').click(function() {
-			$.ajax({
-				type: "GET",
-				url: 'pages/base/configure.php?clear_cache=true',
-				dataType: "json",
-				success: function(data) {
-					notify.info(data.title, data.text);
-				}
-			})
-			.fail(notify.json);
-			return false;
-		});
-
-	}
-});
-
-
 $.widget("sv.widget", {
 	options: {
 		id: null,
@@ -1628,50 +1844,16 @@ $.widget("sv.widget", {
 	},
 
 	_create: function() {
-		this._on({
-			'update': function(event, item, value) {
-				if(typeof this.point == "function" && this.element.highcharts() && item !== undefined) // updateable plot
-					this.point(item, value);
-				else
-					this.update();
-				return false;
-			}
-		});
+		this.items = widget.explode(this.options.item);
+
+		this.element.data('sv-widget', this);
+
 		if(this._events)
 			this._on(this._events);
-
-		this.element.attr('data-is-sv-widget', true);
-
-//		this.element.data('sv.widget', this);
-/*
-		var page = this.element.closest('[data-role="page"]');
-		var widgetindex = page.data('widgetindex') || {};
-		var items = String(this.options.item).explode();
-		var self = this;
-		$.each(items, function(index, item) {
-			if(!widgetindex[item])
-				widgetindex[item] = [self];
-			else
-        widgetindex[item].push(self);
-		});
-		this.element.attr('data-item', null);
-    page.data('widgetindex', widgetindex);
-*/
-/*
-		var items = String(this.options.item).explode();
-		var self = this;
-		$.each(items, function(index, item) {
-			if(!widget.index[item])
-				widget.index[item] = [self];
-			else
-        widget.index[item].push(self);
-		});
-		this.element.attr('data-item', null);
-*/
 	},
-	
+
 	_init: function() {
-		this._super();		
+		this._super();
 		if(this.options.repeat) {
 			this._repeat_milliseconds = Number(new Date().duration(this.options.repeat));
 			this.repeat();
@@ -1683,14 +1865,28 @@ $.widget("sv.widget", {
 	},
 */
 
-	update: function() {
-		var items = widget.explode(this.options.item);
-		var values = widget.get(items);
-		if (widget.check(values)) {
-			this._update(values);
+	/**
+	* TODO: check if partial update is still needed here. With smarthome.py the complete series is transferred
+	*/
+	
+	update: function(values, item) {
+		if(this.allowPartialUpdate && item != null) {
+			if (values !== undefined) {
+				var partialValues = new Array(this.items.length);
+				partialValues[this.items.indexOf(item)] = values;
+				this._update(partialValues);
+			}
+		}
+		else {
+			if(values === undefined || item != null) {
+				values = widget.get(this.items);
+			}
+			if (widget.check(values)) {
+				this._update(values);
+			}
 		}
 	},
-	
+
 	repeat: function() {
 		this._repeat();
 
@@ -1710,10 +1906,17 @@ $.widget("sv.widget", {
 		this._delay(this.repeat, delay);
 	},
 
-	_write: function(value) {
-		io.write(this.options.item, value);
+	_write: function(value, itemindex) {
+		io.write(this.items[itemindex || 0], value);
 	},
 
-	_update: $.noop
+	_update: $.noop,
+	
+/**
+ * Check if exit function exists in the widget and run it
+ */
+	exit: function(){
+		if (this._exit) this._exit();
+	}
 
 });

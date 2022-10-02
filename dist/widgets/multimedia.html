@@ -11,8 +11,8 @@
 /**
 * Plays a soundfile
 *
-* @param {id} unique id for this widget (optional)
-* @param {item} the item which triggers playing
+* @param {id=} unique id for this widget (optional)
+* @param {item(bool,num)} the item which triggers playing
   Notice: The item sets the value to null after playing.
 * @param {text} the url of the soundfile
 * @param {value=1} the value which triggers playing (optional, default 1)
@@ -31,34 +31,31 @@
 /**
 * Displays an image witch is been reloaded after a given time
 *
-* @param {id} unique id for this widget
-* @param {image} the path/url to the image
-* @param {text(none,corner,corner-bottom)=none} the mode: 'none', 'corner', 'corner-bottom' (optional, default 'none')
-* @param {duration=10i} the reload-time in duration-format (optional, default '10i')
+* @param {id=} unique id for this widget
+* @param {text} the path/url or item to the image. For squeezebox create an item with the following value: 'http://IP:PORT/music/current/cover.jpg?player=MACADDRESS'
+* @param {text(none,corner,corner-bottom,fill)=none} the mode: 'none', 'corner', 'corner-bottom', 'fill' (optional, default 'none') (optional)
+* @param {text=10i} the reload-time in duration-format or defined as an item that retriggers a refresh (optional, default '10i')
+* @param {image=} the path/url to a default image that is shown on error and startup
+* @param {text(true,false)=false} set to 'true' in order to load the image by php script, e.g. if image URL contains credentials (optional, default = 'false')
 *
 * @see misc/fundamentals#Duration-Format
 */
-{% macro image(id, src, mode, time) %}
+{% macro image(id, src, mode, refresh, default_img, localize) %}
 
-	<img id="{{ uid(page, id) }}" data-widget="multimedia.image" alt="multimedia.image"
+	<img {% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="multimedia.image" alt="multimedia.image"
 		{% if mode == 'corner' %}
-			class="ui-corner-all"
+			class="ui-corner-all multimediaimage"
 		{% elseif mode == 'corner-bottom' %}
-			class="ui-corner-bottom"
+			class="ui-corner-bottom multimediaimage"
 		{% elseif mode == 'fill' %}
-			style="width: 100%"
+			style="width: 100%" class="multimediaimage"
 		{% endif %}
-		src="pages/base/pics/trans.png" />
-
-	<script type="text/javascript">
-		var noCacheSrc ='{{ src|escape('js') }}' +  (('{{ src }}'.indexOf('?') == -1) ? '?' : '&') + '_=' + new Date().getTime();
-		$('#{{ uid(page, id) }}').attr('src', noCacheSrc);
-
-		setInterval(function () {
-			var noCacheSrc ='{{ src|escape('js') }}' +  (('{{ src }}'.indexOf('?') == -1) ? '?' : '&') + '_=' + new Date().getTime();
-			$('#{{ uid(page, id) }}').attr('src', noCacheSrc);
-		}, new Date().duration('{{time|default("10i")}}'));
-	</script>
+    data-item="{% if '/' not in src and '\\' not in src %}{{ src }}{% endif %}{% if refresh|first not in ['0','1','2','3','4','5','6','7','8','9'] and refresh %}, {{ refresh }}{% endif %}"
+    data-url="{% if '/' in src or '\\' in src %}{% if localize == 'true' %}./lib/multimedia/camimage.php?url={% endif %}{{ src }}{% endif %}"
+    {% if refresh|first in ['0','1','2','3','4','5','6','7','8','9'] or not refresh %}data-repeat="{{ refresh|default('10i') }}"{% endif %}
+    stopTimer="false"
+    src="{{ default_img|default('pages/base/pics/trans.png') }}"
+    onerror="{% if localize == 'true' %}$(this).widget('loadError');{% endif %}this.onerror=null;this.src='{{ default_img|default('pages/base/pics/trans.png') }}'" />
 
 {% endmacro %}
 
@@ -67,17 +64,17 @@
 * Standard Multimedia Player
 *
 * @param {id} unique id for this widget
-* @param {item} the item for play/pause
-* @param {item=} the item for stopping the music (optional)
-* @param {item=} the item for fast forward and rewind (optional)
-* @param {item} the item for next an previous playlist title
-* @param {item=} the item for the position (optional)
-* @param {item=} the item for the volume (optional)
-* @param {item=} the item to mute the music (optional)
-* @param {item=} the item for the song title (optional)
-* @param {item=} the item for the song artist (optional)
-* @param {item=} the item for repeat (optional)
-* @param {item=} the item to load the default playlist (optional)
+* @param {item(bool,num)} the item for play/pause
+* @param {item(bool,num)=} the item for stopping the music (optional)
+* @param {item(bool,num)=} the item for fast forward and rewind (optional)
+* @param {item(bool,num)} the item for next an previous playlist title
+* @param {item(num)=} the item for the position (optional)
+* @param {item(num)=} the item for the volume (optional)
+* @param {item(bool,num)=} the item to mute the music (optional)
+* @param {item(str)=} the item for the song title (optional)
+* @param {item(str)=} the item for the song artist (optional)
+* @param {item(bool,num)=} the item for repeat (optional)
+* @param {item(bool,num)=} the item to load the default playlist (optional)
 *
 * @author Axel Otterstätter
 */
@@ -85,7 +82,7 @@
 	{% import "basic.html" as basic %}
 	{% set uid = uid(page, id) %}
 
-	<div id="{{ uid }}" class="music">
+	<div {% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} class="music">
 
 		{% if item_vol %}
 			<div class="vol">
@@ -129,44 +126,45 @@
 *
 * @param {id=} unique id for this widget (optional)
 * @param {text} a directory where the pictures are located
-* @param {value=2} delay between the slides in sec (optional, default: 4 sec)
-* @param {item=} item to switch to the next slide (optional)
-* @param {item=} item to switch to the previous slide (optional)
+* @param {value=4} delay between the slides in sec (optional, default: 4 sec)
+* @param {item(bool,num)=} item to switch to the next slide (optional)
+* @param {item(bool,num)=} item to switch to the previous slide (optional)
   (if this is same as item_next: 0 triggers previous, any value greater than 0 triggers next, negative values are ignored)
-* @param {item=} item to stop the animation (optional)
-* @param {item=} item to start the animation (optional)
+* @param {item(bool,num)=} item to stop the animation (optional)
+* @param {item(bool,num)=} item to start the animation (optional)
   (if this is same as item_stop: 0 stops, any value greater than 0 starts, negative values are ignored)
 * @param {value=0} Show the pictures in reverse order; possible values are 1 or 0 (optional, default 0)
 * @param {value=0} Show controls; possible values are 1 or 0 (optional, default 0)
 	(they just take effect on the slideshow and do not send anything to backend)
-* @author Alex ???, Stefan Widmer
+* @param {duration=1d} duration until directory content is refreshed in standard duration format (optional, default='1d')
+*
+* @author Alex ???, Stefan Widmer, Wolfram v. Hülsen
 *
 * @info based on cycle2 jquery-plugin: (c) 2012 M. Alsup; Dual licensed: MIT/GPL
 * @link http://jquery.malsup.com/cycle2
 */
-{% macro slideshow(id, dir, delay, item_next, item_prev, item_stop, item_start, reverse, controls) %}
+{% macro slideshow(id, dir, delay, item_next, item_prev, item_stop, item_start, reverse, controls, refresh) %}
 	{% set uid = uid(page, id) %}
 
 	<div{% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} class="slideshow cycle-slideshow" data-widget="multimedia.slideshow"
 		data-cycle-log="false" data-cycle-speed="2000" data-cycle-timeout="{{ delay|default(4) * 1000 }}" data-cycle-reverse="{{ reverse|default(0) }}"
+		data-repeat ="{{ refresh|default('1d') }}" data-directory = "{{ dir }}" 
 		data-item="{{ item_prev }}, {{ item_next }}, {{ item_stop }}, {{ item_start }}">
-		{% for file in dir(dir, '(.+?).(jpg|png|svg)') %}
-			<img src="{{ file.path }}" style="display: block;" title="{{ file.label }}" alt="{{ file.label }}" />
-		{% endfor %}
+
 	</div>
   {% if controls %}
 	<div data-role="controlgroup" data-type="horizontal">
 		<a data-cycle-cmd="prev" href="#" class="ui-btn ui-micro ui-corner-all ui-btn-inline ui-nodisc-icon">
-			<img class="icon" src="icons/ws/audio_rew.svg" alt="prev">
+			<img class="icon" src="{{ icon0 }}audio_rew.svg" alt="prev">
 		</a>
 		<a data-cycle-cmd="pause" href="#" class="ui-btn ui-micro ui-corner-all ui-btn-inline ui-nodisc-icon">
-			<img class="icon" src="icons/ws/audio_stop.svg" alt="stop">
+			<img class="icon" src="{{ icon0 }}audio_stop.svg" alt="stop">
 		</a>
 		<a data-cycle-cmd="resume" href="#" class="ui-btn ui-micro ui-corner-all ui-btn-inline ui-nodisc-icon">
-			<img class="icon" src="icons/ws/audio_play.svg" alt="resume">
+			<img class="icon" src="{{ icon0 }}audio_play.svg" alt="resume">
 		</a>
 		<a data-cycle-cmd="next" href="#" class="ui-btn ui-micro ui-corner-all ui-btn-inline ui-nodisc-icon">
-			<img class="icon" src="icons/ws/audio_ff.svg" alt="next">
+			<img class="icon" src="{{ icon0 }}audio_ff.svg" alt="next">
 		</a>
 	</div>
 	{% endif %}
@@ -177,16 +175,55 @@
 * Displays a tv- or radio- station button
 *
 * @param {id} unique id for this widget
-* @param {item} an item
+* @param {item(bool,num,str)} an item
 * @param {image} an icon (e. g. located in pics/station)
-* @param {value=1} value send if the button is pressed (optional, default 1)
+* @param {text=1} value to send if the button is pressed (optional, default 1)
 * @param {type=mini} type: 'mini', 'midi' (optional, default: mini)
 */
 {% macro station(id, item, pic, val, type) %}
 	{% import "basic.html" as basic %}
 	{% set uid = uid(page, id) %}
 
-	<div id="{{ uid }}" class="station">
+	<div {% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} class="station">
 		{{ basic.stateswitch(id, item, type|default('mini'), val, pic) }}
 	</div>
+{% endmacro %}
+
+/**
+* Displays a slider to show and control the current time of a media file. Slider continues to run every second even if time value is not updated by item
+*
+* @param {id=} unique id for this widget
+* @param {item(num)} an item providing the current time of a media file
+* @param {item(bool)} an item providing info whether song is playing or not (value has to be true or false)
+* @param {item(num)} an item providing the duration of the same media file
+* @param {value=5} step in % between updates (optional, default 5)
+* @param {text(input,handle,both,none)=input} how should the value be shown; possible options: 'input', 'handle', 'both', 'none' (optional, default 'input')
+*/
+{% macro timeslider(id, time, play, duration, step, value_display) %}
+    <input {% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="multimedia.timeslider" data-item="{{ time }}, {{ duration }}, {{ play }}"
+        type="range" value="0" min="0" max="1" disabled="1" step="{{ step|default(5) }}" timer="{{ step|default(5) }}"
+        data-orientation="horizontal" data-handleinfo="{{ value_display == 'handle' or value_display == 'both' }}" class="{{ value_display|default('input') == 'input' or value_display == 'both' ? '' : 'ui-slider-no-input' }}" data-highlight="true" />
+{% endmacro %}
+
+/**
+* A button changing from play to pause and vice versa to control a music/video player
+* Using the following logic:
+* current state: play. Click -> pause. Longclick -> stop
+* current state: pause. Click -> play. Longclick -> stop
+* current state: stop. Click -> play.
+*
+* @param {id=} unique id for this widget (optional)
+* @param {item(bool,num)} an item for the play command
+* @param {item(bool,num)} an item for the pause command
+* @param {item(bool,num)} an item for the stop command
+*
+* @author Onkel Andy
+*/
+{% macro playpause(id, item_play, item_pause, item_stop) %}
+    {% import "basic.html" as basic %}
+    <span {% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} data-widget="multimedia.playpause" data-item="{{ item_play }},{{ item_pause }},{{ item_stop }}" class="icon0 ui-link switch" data-val="0">
+    <a>
+    {{ basic.icon('audio_stop', 'icon0') }}
+    </a>
+    </span>
 {% endmacro %}

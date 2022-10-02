@@ -30,18 +30,28 @@
 * Check for new updates of smartVISU
 */
 {% macro updatecheck( ) %}
-	<script type="text/javascript">
-		$('#index').on('pagecreate', function (event, ui) {
-			$.getJSON('lib/base/check_update.php?local={{ config_version }}', function (data) {
-				if (data.update) {
-					notify.update('smartVISU update available!', 'Your local version is: <b>' + data.local + '</b><br>' +
-						'New remote version is: <b>' + data.remote + '</b><br><br>' +
-						'Please visit <a target="_blank" href="http://smartvisu.de">smartVISU.de</a> to download the latest version!<br />');
-				}
-			})
-				.error(notify.json);
-		});
-	</script>
+	{% if config_updatecheck %}
+		<script>
+			$('#index').on('pagecreate', function (event, ui) {
+				$.ajax({
+					dataType: 'json',
+					url: 'lib/base/check_update.php?local={{ config_version_full }}',
+					beforeSend: function(jqXHR, settings) { jqXHR.svProcess = 'Update Check'; },
+					success: function (data) {
+						if (data.update) {
+							notify.message('update', data.text, 'Your local version is: <b>' + data.local + '</b><br>' +
+							'Latest stable release is: <b>' + data.remote + '</b><br><br>' +
+							'Please visit <a target="_blank" href="http://smartvisu.de">smartVISU.de</a> or <a target="_blank" href="http://github.com/martin-gleiss/smartvisu">github</a> to download the latest version!<br><br>'+
+							'Update check will run again in 7 days from now. <br />');
+						}
+					}
+				})
+				.fail(notify.json);
+			});
+		</script>
+	{% else %}
+		<!-- Check for updates disabled in configuration -->
+	{% endif %}
 {% endmacro %}
 
 
@@ -59,10 +69,98 @@
 
 	<div class="app">
 		<a href="index.php?page={{ name }}">
-			<div class="image" style="background-color: #{{ app.color }};"><img src="{{ app.icon }}"></div>
+			<div class="image" style="background-color: #{{ app.color }};"><img src="{{ app.icon }}" alt="{{ app.name }}"></div>
 			<div>{{ title|default(app.title|e) }}</div>
 		</a>
 	</div>
 {% endmacro %}
 
+/**
+* Widget to show websocket connection
+*
+*/
+{% macro connection( ) %}
+{% import "basic.html" as basic %}
+	io connection:&nbsp;&nbsp;<span id="connection"></span>
+	<script>
+		$('#connection').html(io.socket.url);
+		if (io.server != undefined) { 
+			if (io.server != '') {						// if io.server already set write it directly
+				var connectString = '<br>smarthomeNG websocket server: '+ io.server + '<br>connected since: '+ io.opentime.transUnit('short');
+				$('#connection').html(io.socket.url + connectString);
+			} else {
+				$(document).on('ioAlive', function(){   //else wait for ioAlive event and write then
+					if (io.server != '' ) {
+						var connectString = '<br>smarthomeNG websocket server: '+ io.server + '<br>connected since: '+ io.opentime.transUnit('short')+'<br>smartVISU server IP: '+sv.info.serverIP+'&nbsp;&nbsp;&nbsp;&nbsp;Remote IP: '+sv.info.remoteIP;
+						$('#connection').html(io.socket.url + connectString);
+					}
+				})
+			}
+		}
+	</script>
+{% endmacro %}
 
+/**
+* Button to send a timestamp to an item (for countdown docu page)
+*
+* @param {id} unique id for the widget. Mandatory in order to identify the button in a page with more than one button 
+* @param {item(num)} the item 
+*
+* @Author: Wolfram v. Hülsen
+*/
+{% macro timestamp (id, item) %}
+	<button type="button" data-theme="a" data-inline="true" id="send_timestamp_{{ uid(page, id) }}" class="ui-midi">Trigger</button> Click to start
+	<script>
+		$('#send_timestamp_{{ uid(page, id) }} ').click(function() {
+			var now = +new Date();	
+			io.write('{{ item }}', now );
+		});
+	</script>
+{% endmacro %}
+
+/**
+* Extend a single block to full screen width
+*
+* @param {id=} unique id for the widget.
+*
+* @Author: bonze  (plot resize by Wolfram v. Hülsen)
+*/
+{% macro supersize ( id ) %}
+	{% set uid = uid(page, id) %}
+	 <span{% if not id is empty %} id="{{ uid(page, id) }}"{% endif %} >
+		<a><img class="supersize" src="icons/sw/control_centr_arrow_up_right.svg" style="position:absolute; width:3em; height:auto; top:0px; right:0px;"></a>
+	</span>
+	<script>
+		$(".supersize").click(function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+			var element = $(this).closest("div");
+			var previousWidth = parseFloat(element.css('width').replace('px',''));
+			var previousHeight = parseFloat(element.find('.ui-collapsible-content').css('height').replace('px',''));
+
+			if (!element.hasClass('overlay')){
+				$(".mask").css('display','block');
+				element.addClass("overlay").show();
+				element.collapsible('expand'); 
+				element.find("h3").addClass("ui-corner-all");
+				element.find(".supersize").attr("src", "icons/sw/jquery_minus.svg");
+				element.find('.highcharts-root').addClass('supersized');
+			}else{
+				$(".mask").css('display','none');
+				element.removeClass("overlay");
+				element.find("h3").removeClass("ui-corner-all");
+				element.find(".supersize").attr("src", "icons/sw/control_centr_arrow_up_right.svg");
+				element.find('.highcharts-root').removeClass('supersized');
+			}
+			var actualWidth = parseInt(element.css('width').replace('px',''));
+			var sizeFactor = actualWidth / previousWidth;
+			element.find('.ui-collapsible-content').css('height', previousHeight * sizeFactor)
+			.find('.plot').each(function() {
+				var actualPlotHeight = parseFloat($(this).css('height').replace('px',''));
+				$(this).css('height', actualPlotHeight * sizeFactor);
+				$(this).highcharts().setSize(null, null);
+			});
+		});
+	</script>
+{% endmacro %}
