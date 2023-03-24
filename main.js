@@ -8,20 +8,20 @@
  /*jslint esversion: 6 */
 'use strict';
 
-var utils = require('@iobroker/adapter-core'); // Get common adapter utils
-var path = require('path');
-var fs = require('fs');
-var dataDir = path.normalize(utils.controllerDir + path.sep + require(utils.controllerDir + path.sep + 'lib' + path.sep + 'tools').getDefaultDataDir());
+const utils = require('@iobroker/adapter-core'); // Get common adapter utils
+const path = require('path');
+const fs = require('fs');
+const dataDir = utils.getAbsoluteDefaultDataDir();
 
-var recCopy = require('recursive-copy');
+const recCopy = require('recursive-copy');
 
-var express = require('express');
-var sphp = require('sphp');
+const express = require('express');
+const sphp = require('sphp');
 
-var app = express();
-var serving = false;
+const app = express();
+let serving = false;
 
-var adapter = new utils.Adapter('smartvisu');
+const adapter = new utils.Adapter('smartvisu');
 
 function shutdownServer(callback) {
     try {
@@ -56,7 +56,7 @@ adapter.on('ready', function () {
 
 
 function installSmartVisu(callback) {
-    var distDir = __dirname + '/dist/';
+    const distDir = __dirname + '/dist/';
 
     if (! fs.existsSync(adapter.config.docRoot)) {
         adapter.log.info('DocRoot do not exists, we need to create and initially copy files');
@@ -136,7 +136,7 @@ function main() {
     }
 
     if (adapter.config.docRoot[0] !== '/' && !adapter.config.docRoot.match(/^\w:\//)) {
-        adapter.config.docRoot = dataDir + adapter.config.docRoot;
+        adapter.config.docRoot = path.join(dataDir, adapter.config.docRoot);
     }
     adapter.config.docRoot += path.sep;
 

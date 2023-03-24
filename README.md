@@ -100,6 +100,9 @@ When you have started the adapter you can use http://<host>:<Serverport>/phpinfo
 
 ## Changelog
 
+### __WORK IN PROGRESS__
+* (Apollon77) Prepare for future js-controller versions
+
 ### 0.0.1
 * (Apollon77) initial test version
 

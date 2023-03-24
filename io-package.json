@@ -59,7 +59,12 @@
         "type": "visualization",
         "localLink": "%protocol%://%ip%:%serverPort%/index.php",
         "stopBeforeUpdate": true,
-        "dataDir": "smartvisu_%INSTANCE%"
+        "dataDir": "smartvisu_%INSTANCE%",
+        "dependencies": [
+            {
+                "js-controller": ">=2.0.0"
+            }
+        ]
     },
     "native": {
         "serverPort": 8100,
